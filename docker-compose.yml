@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: marketdata-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: marketdata
+      POSTGRES_USER: marketdata
+      POSTGRES_PASSWORD: marketdata
+    ports:
+      - "5433:5432"
+    volumes:
+      - marketdata_pgdata16:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U marketdata -d marketdata"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  marketdata_pgdata16:
