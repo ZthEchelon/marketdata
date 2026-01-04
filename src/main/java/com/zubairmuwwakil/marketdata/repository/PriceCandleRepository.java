@@ -7,13 +7,22 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-public interface PriceCandleRepository extends JpaRepository<PriceCandle, Long> {
+public interface PriceCandleRepository
+        extends JpaRepository<PriceCandle, Long> {
 
-    Optional<PriceCandle> findBySymbolAndTradeDate(String symbol, LocalDate tradeDate);
+    // Idempotency check during ingestion
+    Optional<PriceCandle> findBySymbolAndTradeDate(
+            String symbol,
+            LocalDate tradeDate
+    );
 
-    List<PriceCandle> findAllBySymbolOrderByTradeDateAsc(String symbol);
+    // Used by IndicatorCalculationService
+    List<PriceCandle> findBySymbolOrderByTradeDateAsc(
+            String symbol
+    );
 
-    List<PriceCandle> findAllBySymbolAndTradeDateBetweenOrderByTradeDateAsc(
-            String symbol, LocalDate from, LocalDate to
+    // (Optional, future use) recent candles
+    List<PriceCandle> findTop200BySymbolOrderByTradeDateDesc(
+            String symbol
     );
 }

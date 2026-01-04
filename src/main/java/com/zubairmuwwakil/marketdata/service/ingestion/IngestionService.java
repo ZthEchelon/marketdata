@@ -9,10 +9,15 @@ import com.zubairmuwwakil.marketdata.repository.PriceCandleRepository;
 import com.zubairmuwwakil.marketdata.repository.WatchlistSymbolRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.zubairmuwwakil.marketdata.service.indicator.IndicatorCalculationService;
+
+
 
 import java.time.*;
 import java.util.List;
 import java.util.Locale;
+
+import javax.management.RuntimeErrorException;
 
 @Service
 public class IngestionService {
@@ -22,19 +27,24 @@ public class IngestionService {
     private final QuotaService quotaService;
     private final PriceCandleRepository candleRepo;
     private final PipelineRunRepository runRepo;
+    private final IndicatorCalculationService indicatorService;
+    
 
     public IngestionService(
             MarketDataProvider marketDataProvider,
             WatchlistSymbolRepository watchlistRepo,
             QuotaService quotaService,
             PriceCandleRepository candleRepo,
-            PipelineRunRepository runRepo
+            PipelineRunRepository runRepo,
+            IndicatorCalculationService indicatorService
+
     ) {
         this.marketDataProvider = marketDataProvider;
         this.watchlistRepo = watchlistRepo;
         this.quotaService = quotaService;
         this.candleRepo = candleRepo;
         this.runRepo = runRepo;
+        this.indicatorService = indicatorService;
     }
 
     @Transactional
@@ -49,7 +59,7 @@ public class IngestionService {
         int remaining = quotaService.remainingToday();
         int willAttempt = Math.min(expected, remaining);
 
-        int processed = 0;   // successful API calls
+        int processed = 0;   // symbols successfully processed
         int failed = 0;      // failed API calls
         String lastError = null;
 
@@ -83,7 +93,8 @@ public class IngestionService {
 
                 List<DailyCandle> candles =
                         marketDataProvider.fetchDailyCandles(symbol, from, to);
-
+                
+                        int inserted = 0;
                 // Upsert by (symbol, tradeDate) — idempotent
                 for (DailyCandle c : candles) {
                     if (candleRepo.findBySymbolAndTradeDate(symbol, c.tradeDate()).isPresent()) {
@@ -103,8 +114,14 @@ public class IngestionService {
                             .build();
 
                     candleRepo.save(entity);
+                    inserted++;
                 }
 
+                if (candles.isEmpty()) {
+                    continue; // nothing fetched at all
+                }
+                // Only calculate indicators if we actually inserted candles
+                indicatorService.calculateForSymbol(symbol);
                 processed++;
             } catch (Exception e) {
                 failed++;
