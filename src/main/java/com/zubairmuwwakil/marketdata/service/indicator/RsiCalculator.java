@@ -26,11 +26,6 @@ public final class RsiCalculator {
             else loss = loss.add(diff.abs());
         }
 
-        if (loss.compareTo(BigDecimal.ZERO) == 0) {
-            // All gains in the window: RSI is 100 for these points
-            return List.of(BigDecimal.valueOf(100));
-        }
-
         BigDecimal avgGain = gain.divide(PERIOD_BD, 8, RoundingMode.HALF_UP);
         BigDecimal avgLoss = loss.divide(PERIOD_BD, 8, RoundingMode.HALF_UP);
 
