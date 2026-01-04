@@ -22,7 +22,13 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
-    
+
+logging:
+  file:
+    name: logs/marketdata.log
+  level:
+    root: INFO
+
 management:
   endpoints:
     web:

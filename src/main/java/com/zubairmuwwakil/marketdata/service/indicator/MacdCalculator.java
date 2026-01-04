@@ -46,7 +46,17 @@ public final class MacdCalculator {
                 continue;
             }
 
-            BigDecimal signal = signalLine.get(i - signalOffset);
+            int signalIdx = i - signalOffset;
+            if (signalIdx < 0 || signalIdx >= signalLine.size()) {
+                result.add(null);
+                continue;
+            }
+
+            BigDecimal signal = signalLine.get(signalIdx);
+            if (signal == null) {
+                result.add(null);
+                continue;
+            }
             BigDecimal hist = macdLine.get(i).subtract(signal);
 
             result.add(new MacdPoint(macdLine.get(i), signal, hist));

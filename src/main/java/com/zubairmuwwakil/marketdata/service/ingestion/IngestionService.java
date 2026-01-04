@@ -7,28 +7,23 @@ import com.zubairmuwwakil.marketdata.model.entity.PriceCandle;
 import com.zubairmuwwakil.marketdata.repository.PipelineRunRepository;
 import com.zubairmuwwakil.marketdata.repository.PriceCandleRepository;
 import com.zubairmuwwakil.marketdata.repository.WatchlistSymbolRepository;
+import com.zubairmuwwakil.marketdata.service.indicator.IndicatorCalculationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.zubairmuwwakil.marketdata.service.indicator.IndicatorCalculationService;
-
-
 
 import java.time.*;
 import java.util.List;
 import java.util.Locale;
 
-import javax.management.RuntimeErrorException;
-
 @Service
 public class IngestionService {
 
-    private final MarketDataProvider marketDataProvider; // AlphaVantageDailyProvider
+    private final MarketDataProvider marketDataProvider;
     private final WatchlistSymbolRepository watchlistRepo;
     private final QuotaService quotaService;
     private final PriceCandleRepository candleRepo;
     private final PipelineRunRepository runRepo;
     private final IndicatorCalculationService indicatorService;
-    
 
     public IngestionService(
             MarketDataProvider marketDataProvider,
@@ -37,7 +32,6 @@ public class IngestionService {
             PriceCandleRepository candleRepo,
             PipelineRunRepository runRepo,
             IndicatorCalculationService indicatorService
-
     ) {
         this.marketDataProvider = marketDataProvider;
         this.watchlistRepo = watchlistRepo;
@@ -47,61 +41,112 @@ public class IngestionService {
         this.indicatorService = indicatorService;
     }
 
-    @Transactional
+    /**
+     * Daily ingestion entry point.
+     * Idempotent, quota-aware, indicator-safe.
+     */
     public PipelineRun ingestDaily() {
         Instant startedAt = Instant.now();
         ZoneId ny = ZoneId.of("America/New_York");
         LocalDate runDate = LocalDate.now(ny);
 
-        var active = watchlistRepo.findAllByActiveTrueOrderBySymbolAsc();
-        int expected = active.size();
+        var activeSymbols =
+                watchlistRepo.findAllByActiveTrueOrderBySymbolAsc();
 
-        int remaining = quotaService.remainingToday();
-        int willAttempt = Math.min(expected, remaining);
+        int expected = activeSymbols.size();
+        int remainingQuota = quotaService.remainingToday();
+        int willAttempt = Math.min(expected, remainingQuota);
 
-        int processed = 0;   // symbols successfully processed
-        int failed = 0;      // failed API calls
+        int processed = 0;
+        int failed = 0;
         String lastError = null;
 
-        // for RSI/MACD warmup later
         LocalDate to = LocalDate.now(ny);
-        LocalDate from = to.minusDays(120);
+        LocalDate from = to.minusDays(120); // warmup for RSI/MACD
 
-        // If we have no quota left, mark FAILED (nothing attempted)
+        // No quota → fail fast
         if (willAttempt == 0 && expected > 0) {
-            PipelineRun run = PipelineRun.builder()
-                    .runDate(runDate)
-                    .status(PipelineStatus.FAILED)
-                    .symbolsExpected(expected)
-                    .symbolsProcessed(0)
-                    .errorMessage("Daily Alpha Vantage quota exhausted (0 remaining).")
-                    .startedAt(startedAt)
-                    .finishedAt(Instant.now())
-                    .build();
-            return runRepo.save(run);
+            return runRepo.save(
+                    PipelineRun.builder()
+                            .runDate(runDate)
+                            .status(PipelineStatus.FAILED)
+                            .symbolsExpected(expected)
+                            .symbolsProcessed(0)
+                            .errorMessage("Daily Alpha Vantage quota exhausted.")
+                            .startedAt(startedAt)
+                            .finishedAt(Instant.now())
+                            .build()
+            );
         }
 
-        List<String> symbolsToProcess = active.stream()
+        List<String> symbolsToProcess = activeSymbols.stream()
                 .limit(willAttempt)
-                .map(w -> w.getSymbol().trim().toUpperCase(Locale.ROOT))
+                .map(s -> s.getSymbol().trim().toUpperCase(Locale.ROOT))
                 .toList();
 
         for (String symbol : symbolsToProcess) {
             try {
-                // consume BEFORE call so we never exceed limit if the call hangs/retries
-                quotaService.consumeOneCall();
+                boolean changed = processSymbol(symbol, from, to);
+                if (changed) {
+                    processed++;
+                }
+            } catch (Exception e) {
+                failed++;
+                lastError = symbol + ": " + e.getMessage();
+            }
+        }
 
-                List<DailyCandle> candles =
-                        marketDataProvider.fetchDailyCandles(symbol, from, to);
-                
-                        int inserted = 0;
-                // Upsert by (symbol, tradeDate) — idempotent
-                for (DailyCandle c : candles) {
-                    if (candleRepo.findBySymbolAndTradeDate(symbol, c.tradeDate()).isPresent()) {
-                        continue;
-                    }
+        PipelineStatus status;
+        if (processed == 0 && failed > 0) {
+            status = PipelineStatus.FAILED;
+        } else if (failed > 0) {
+            status = PipelineStatus.PARTIAL;
+        } else {
+            status = PipelineStatus.SUCCESS;
+        }
 
-                    PriceCandle entity = PriceCandle.builder()
+        String errorMessage =
+                failed == 0 ? null
+                        : "Failed " + failed + "/" + willAttempt +
+                          ". Last error: " + lastError;
+
+        return runRepo.save(
+                PipelineRun.builder()
+                        .runDate(runDate)
+                        .status(status)
+                        .symbolsExpected(expected)
+                        .symbolsProcessed(processed)
+                        .errorMessage(errorMessage)
+                        .startedAt(startedAt)
+                        .finishedAt(Instant.now())
+                        .build()
+        );
+    }
+
+    /**
+     * Processes one symbol in its own transaction so a failure
+     * does not roll back the entire pipeline run.
+     *
+     * @return true if any candles were inserted and indicators recalculated.
+     */
+    @Transactional
+    protected boolean processSymbol(String symbol, LocalDate from, LocalDate to) {
+        quotaService.consumeOneCall();
+
+        List<DailyCandle> candles =
+                marketDataProvider.fetchDailyCandles(symbol, from, to);
+
+        int inserted = 0;
+
+        for (DailyCandle c : candles) {
+            if (candleRepo
+                    .findBySymbolAndTradeDate(symbol, c.tradeDate())
+                    .isPresent()) {
+                continue;
+            }
+
+            candleRepo.save(
+                    PriceCandle.builder()
                             .symbol(symbol)
                             .tradeDate(c.tradeDate())
                             .open(c.open())
@@ -111,43 +156,13 @@ public class IngestionService {
                             .volume(c.volume())
                             .adjusted(false)
                             .source(marketDataProvider.sourceName())
-                            .build();
-
-                    candleRepo.save(entity);
-                    inserted++;
-                }
-
-                if (candles.isEmpty()) {
-                    continue; // nothing fetched at all
-                }
-                // Only calculate indicators if we actually inserted candles
-                indicatorService.calculateForSymbol(symbol);
-                processed++;
-            } catch (Exception e) {
-                failed++;
-                lastError = symbol + ": " + e.getMessage();
-            }
+                            .build()
+            );
+            inserted++;
         }
 
-        PipelineStatus status;
-        if (processed == 0 && failed > 0) status = PipelineStatus.FAILED;
-        else if (failed > 0) status = PipelineStatus.PARTIAL;
-        else status = PipelineStatus.SUCCESS;
-
-        String errorMessage = (failed == 0)
-                ? null
-                : ("Failed " + failed + "/" + willAttempt + ". Last error: " + lastError);
-
-        PipelineRun run = PipelineRun.builder()
-                .runDate(runDate)
-                .status(status)
-                .symbolsExpected(expected)          // how many user wanted
-                .symbolsProcessed(processed)        // successful API calls
-                .errorMessage(errorMessage)
-                .startedAt(startedAt)
-                .finishedAt(Instant.now())
-                .build();
-
-        return runRepo.save(run);
+        // Always run indicators; service is idempotent and will fill gaps
+        indicatorService.calculateForSymbol(symbol);
+        return true;
     }
 }

@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marketdata Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --accent: #10b981;
+      --accent-soft: rgba(16, 185, 129, 0.12);
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --danger: #f87171;
+      --border: #1f2937;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
+      background: radial-gradient(120% 120% at 0% 20%, #0b1326, #0f172a 45%, #0b1326 90%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      padding: 32px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .brand {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: 13px;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+    }
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      letter-spacing: 0.01em;
+    }
+    .card p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    input, select {
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0b1221;
+      color: var(--text);
+      font-size: 14px;
+      font-family: "Space Grotesk", sans-serif;
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    }
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 11px 14px;
+      background: var(--accent);
+      color: #052e16;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 120ms ease, box-shadow 120ms ease;
+      font-family: "Space Grotesk", sans-serif;
+    }
+    button:hover { transform: translateY(-1px); box-shadow: 0 10px 30px rgba(16, 185, 129, 0.25); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; transform: none; }
+    .row {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      align-items: end;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      color: var(--text);
+      font-family: "IBM Plex Mono", monospace;
+    }
+    th { color: var(--muted); font-weight: 600; }
+    .status { font-size: 13px; color: var(--muted); margin-top: 10px; }
+    .status.error { color: var(--danger); }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--accent);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      font-size: 12px;
+      font-family: "IBM Plex Mono", monospace;
+    }
+    @media (max-width: 640px) {
+      header { padding: 24px 16px 12px; }
+      main { padding: 16px; }
+      .card { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Marketdata Control</div>
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <a href="/watchlist.html" style="text-decoration:none;">
+        <span class="pill">Watchlist Snapshot</span>
+      </a>
+      <div class="pill">Status: <span id="status-dot">Not connected</span></div>
+      <div class="pill">Quota: <span id="quota-label">--/--</span></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="card" id="ingest-card">
+      <h2>Ingest Daily Data</h2>
+      <p>Trigger the pipeline to fetch candles for active watchlist symbols and compute RSI/MACD.</p>
+      <div class="row" style="margin-bottom:12px;">
+        <div>
+          <label for="api-key">Alpha Vantage API Key</label>
+          <input id="api-key" placeholder="Enter API key" autocomplete="off">
+        </div>
+        <div>
+          <button id="save-key-btn">Save API Key</button>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+        <img src="https://www.alphavantage.co/images/alpha_vantage_logo.png" alt="Alpha Vantage" style="height:28px;">
+        <a href="https://www.alphavantage.co/support/#api-key" target="_blank" rel="noreferrer" style="color:var(--accent); text-decoration:none; font-weight:600;">
+          Need an API key? Get one from Alpha Vantage →
+        </a>
+      </div>
+      <div class="status" id="key-status"></div>
+      <button id="ingest-btn">Run Ingestion</button>
+      <div class="status" id="ingest-status"></div>
+    </section>
+
+    <section class="card">
+      <h2>Watchlist</h2>
+      <p>Manage the active symbols that the pipeline ingests. Add symbols, view current list, and remove entries.</p>
+      <div class="row" style="margin-bottom:12px;">
+        <div>
+          <label for="watchlist-input">Add Symbol</label>
+          <input id="watchlist-input" placeholder="e.g. AAPL" autocomplete="off">
+        </div>
+        <div>
+          <button id="watchlist-add-btn">Add to Watchlist</button>
+        </div>
+      </div>
+      <div id="watchlist-list" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+      <div class="status" id="watchlist-status"></div>
+    </section>
+
+    <section class="card">
+      <h2>Indicator Lookup</h2>
+      <p>Query stored indicators by symbol (and optional type) from the normalized table.</p>
+      <div class="row">
+        <div>
+          <label for="symbol">Symbol</label>
+          <input id="symbol" placeholder="e.g. AAPL" autocomplete="off">
+        </div>
+        <div>
+          <label for="symbol-select">Or pick from watchlist</label>
+          <select id="symbol-select">
+            <option value="">-- Select symbol --</option>
+          </select>
+          <div id="symbol-info" class="status"></div>
+        </div>
+        <div>
+          <label for="type">Indicator Type (optional)</label>
+          <select id="type">
+            <option value="">All indicators</option>
+            <option value="RSI_14">RSI_14</option>
+            <option value="MACD">MACD</option>
+            <option value="MACD_SIGNAL">MACD_SIGNAL</option>
+            <option value="MACD_HISTOGRAM">MACD_HISTOGRAM</option>
+          </select>
+        </div>
+        <div>
+          <button id="query-btn">Fetch Indicators</button>
+        </div>
+      </div>
+      <div class="status" id="query-status"></div>
+      <div id="results"></div>
+    </section>
+  </main>
+
+  <script>
+    const ingestBtn = document.getElementById('ingest-btn');
+    const ingestStatus = document.getElementById('ingest-status');
+    const statusDot = document.getElementById('status-dot');
+    const quotaLabel = document.getElementById('quota-label');
+    const keyBtn = document.getElementById('save-key-btn');
+    const keyStatus = document.getElementById('key-status');
+    const watchlistInput = document.getElementById('watchlist-input');
+    const watchlistAddBtn = document.getElementById('watchlist-add-btn');
+    const watchlistList = document.getElementById('watchlist-list');
+    const watchlistStatus = document.getElementById('watchlist-status');
+
+    const queryBtn = document.getElementById('query-btn');
+    const queryStatus = document.getElementById('query-status');
+    const results = document.getElementById('results');
+    const symbolSelect = document.getElementById('symbol-select');
+    const symbolInfo = document.getElementById('symbol-info');
+
+    const api = (path, opts = {}) => fetch(path, {
+      headers: { 'Content-Type': 'application/json' },
+      ...opts
+    });
+
+    const setStatus = (el, msg, isError = false) => {
+      el.textContent = msg || '';
+      el.className = 'status' + (isError ? ' error' : '');
+    };
+
+    async function refreshQuota() {
+      try {
+        const res = await fetch('/api/v1/admin/quota');
+        if (res.ok) {
+          const data = await res.json();
+          quotaLabel.textContent = `${data.remaining}/${data.limit}`;
+          quotaLabel.style.color = data.remaining > 0 ? 'var(--accent)' : 'var(--danger)';
+        } else {
+          quotaLabel.textContent = '--/--';
+          quotaLabel.style.color = 'var(--muted)';
+        }
+      } catch {
+        quotaLabel.textContent = '--/--';
+        quotaLabel.style.color = 'var(--muted)';
+      }
+    }
+
+    let watchlist = [];
+    let summaries = [];
+
+    const renderWatchlist = () => {
+      if (!watchlist.length) {
+        watchlistList.innerHTML = '<span class="status">No symbols yet.</span>';
+        return;
+      }
+      watchlistList.innerHTML = watchlist.map(sym => `
+        <span class="badge" data-symbol="${sym}" style="gap:6px;">
+          ${sym}
+          <button data-remove="${sym}" style="padding:2px 6px; background:var(--danger); color:#fff; border-radius:6px; border:none; font-size:11px;">×</button>
+        </span>
+      `).join('');
+    };
+
+    const syncWatchlist = async (symbols) => {
+      setStatus(watchlistStatus, 'Updating watchlist...');
+      watchlistAddBtn.disabled = true;
+      try {
+        const res = await api('/api/v1/watchlist', {
+          method: 'PUT',
+          body: JSON.stringify({ symbols })
+        });
+        if (!res.ok) {
+          const msg = await res.text();
+          throw new Error(msg || `HTTP ${res.status}`);
+        }
+        watchlist = symbols;
+        renderWatchlist();
+        setStatus(watchlistStatus, 'Watchlist updated.');
+      } catch (err) {
+        setStatus(watchlistStatus, `Failed: ${err.message}`, true);
+      } finally {
+        watchlistAddBtn.disabled = false;
+      }
+    };
+
+    const loadWatchlist = async () => {
+      setStatus(watchlistStatus, 'Loading watchlist...');
+      try {
+        const res = await api('/api/v1/watchlist');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        watchlist = data.symbols || [];
+        renderWatchlist();
+        setStatus(watchlistStatus, '');
+      } catch (err) {
+        setStatus(watchlistStatus, `Failed to load watchlist: ${err.message}`, true);
+      }
+    };
+
+    const loadSummaries = async () => {
+      try {
+        const res = await api('/api/v1/market/summary');
+        if (!res.ok) return;
+        summaries = await res.json();
+        symbolSelect.innerHTML = '<option value="">-- Select symbol --</option>' +
+          summaries.map(s => `<option value="${s.symbol}">${s.symbol} (${s.tradeDate})</option>`).join('');
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    const updateSymbolInfo = (sym) => {
+      const entry = summaries.find(s => s.symbol === sym);
+      if (!entry) {
+        symbolInfo.textContent = '';
+        return;
+      }
+      symbolInfo.textContent = `Latest: ${entry.tradeDate} | O:${Number(entry.open).toFixed(2)} H:${Number(entry.high).toFixed(2)} L:${Number(entry.low).toFixed(2)} C:${Number(entry.close).toFixed(2)} V:${entry.volume.toLocaleString()}`;
+      symbolInfo.className = 'status';
+    };
+
+    symbolSelect.addEventListener('change', (e) => {
+      const sym = e.target.value;
+      document.getElementById('symbol').value = sym;
+      updateSymbolInfo(sym);
+    });
+
+    watchlistAddBtn.addEventListener('click', async () => {
+      const sym = watchlistInput.value.trim().toUpperCase();
+      if (!sym) {
+        setStatus(watchlistStatus, 'Enter a symbol to add.', true);
+        return;
+      }
+      if (watchlist.includes(sym)) {
+        setStatus(watchlistStatus, `${sym} is already on the watchlist.`);
+        watchlistInput.value = '';
+        return;
+      }
+      await syncWatchlist([...watchlist, sym]);
+      watchlistInput.value = '';
+    });
+
+    watchlistList.addEventListener('click', async (e) => {
+      const sym = e.target.getAttribute('data-remove');
+      if (!sym) return;
+      const updated = watchlist.filter(s => s !== sym);
+      await syncWatchlist(updated);
+    });
+
+    keyBtn.addEventListener('click', async () => {
+      const key = document.getElementById('api-key').value.trim();
+      if (!key) {
+        setStatus(keyStatus, 'Enter an API key.', true);
+        return;
+      }
+      setStatus(keyStatus, 'Saving API key...');
+      keyBtn.disabled = true;
+      try {
+        const res = await api('/api/v1/admin/api-key', {
+          method: 'POST',
+          body: JSON.stringify({ apiKey: key })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || `HTTP ${res.status}`);
+        }
+        setStatus(keyStatus, data.message || 'API key saved.');
+        if (data.remaining !== undefined) {
+          const limit = data.limit ?? 25;
+          quotaLabel.textContent = `${data.remaining}/${limit}`;
+          quotaLabel.style.color = 'var(--accent)';
+        } else {
+          await refreshQuota();
+        }
+      } catch (err) {
+        setStatus(keyStatus, `Failed to save key: ${err.message}`, true);
+      } finally {
+        keyBtn.disabled = false;
+      }
+    });
+
+    ingestBtn.addEventListener('click', async () => {
+      setStatus(ingestStatus, 'Running ingestion...');
+      ingestBtn.disabled = true;
+      try {
+        const res = await api('/api/v1/admin/ingest', { method: 'POST' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setStatus(ingestStatus, `Run ${data.id} => ${data.status}. Processed ${data.symbolsProcessed}/${data.symbolsExpected}.`, data.status !== 'SUCCESS');
+      } catch (err) {
+        setStatus(ingestStatus, `Ingestion failed: ${err.message}`, true);
+      } finally {
+        ingestBtn.disabled = false;
+      }
+    });
+
+    queryBtn.addEventListener('click', async () => {
+      const symbol = document.getElementById('symbol').value.trim().toUpperCase();
+      const type = document.getElementById('type').value;
+      if (!symbol) {
+        setStatus(queryStatus, 'Enter a symbol to query.', true);
+        return;
+      }
+      setStatus(queryStatus, 'Fetching indicators...');
+      results.innerHTML = '';
+      queryBtn.disabled = true;
+      try {
+        const path = type
+          ? `/api/v1/indicators/${encodeURIComponent(symbol)}/${encodeURIComponent(type)}`
+          : `/api/v1/indicators/${encodeURIComponent(symbol)}`;
+        const res = await api(path);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!data.length) {
+          setStatus(queryStatus, 'No indicators found for this query.');
+          return;
+        }
+        setStatus(queryStatus, `Loaded ${data.length} rows.`);
+        renderTable(data);
+      } catch (err) {
+        setStatus(queryStatus, `Query failed: ${err.message}`, true);
+      } finally {
+        queryBtn.disabled = false;
+      }
+    });
+
+    function renderTable(data) {
+      const rows = data.map(d => `
+        <tr>
+          <td><span class="badge">${d.symbol}</span></td>
+          <td>${d.tradeDate}</td>
+          <td>${d.type}</td>
+          <td>${Number(d.value).toFixed(4)}</td>
+        </tr>
+      `).join('');
+      results.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Trade Date</th>
+              <th>Type</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    // Update status/quota on load
+    (async function init() {
+      try {
+        const res = await fetch('/actuator/health');
+        if (res.ok) {
+          statusDot.textContent = 'API reachable';
+          statusDot.style.color = 'var(--accent)';
+        } else {
+          statusDot.textContent = 'API unreachable';
+          statusDot.style.color = 'var(--danger)';
+        }
+      } catch {
+        statusDot.textContent = 'API unreachable';
+        statusDot.style.color = 'var(--danger)';
+      }
+      await refreshQuota();
+      await loadWatchlist();
+      await loadSummaries();
+    })();
+  </script>
+</body>
+</html>

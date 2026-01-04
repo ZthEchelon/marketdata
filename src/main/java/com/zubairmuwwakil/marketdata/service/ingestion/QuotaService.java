@@ -38,6 +38,14 @@ public class QuotaService {
     }
 
     @Transactional
+    public ApiQuotaUsage resetToday() {
+        ApiQuotaUsage u = getOrCreateToday();
+        u.setCallsUsed(0);
+        u.setCallsLimit(DAILY_LIMIT);
+        return repo.save(u);
+    }
+
+    @Transactional
     public void consumeOneCall() {
         ApiQuotaUsage u = getOrCreateToday();
         if (u.getCallsUsed() >= u.getCallsLimit()) {

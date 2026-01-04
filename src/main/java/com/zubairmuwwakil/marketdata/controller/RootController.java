@@ -1,13 +1,14 @@
 package com.zubairmuwwakil.marketdata.controller;
 
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
 
-@RestController
+@Controller
 public class RootController {
 
     @GetMapping("/")
     public String home() {
-        return "marketdata API is running";
+        // Serve the static frontend
+        return "forward:/index.html";
     }
 }

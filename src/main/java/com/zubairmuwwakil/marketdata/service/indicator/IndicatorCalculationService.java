@@ -33,7 +33,10 @@ public class IndicatorCalculationService {
     @Transactional
     public void calculateForSymbol(String symbol) {
         List<PriceCandle> candles =
-                candleRepo.findBySymbolOrderByTradeDateAsc(symbol);
+                candleRepo.findBySymbolOrderByTradeDateAsc(symbol)
+                        .stream()
+                        .filter(c -> c.getClose() != null)
+                        .toList();
 
         if (candles.size() < 30) {
             return; // not enough data for MACD

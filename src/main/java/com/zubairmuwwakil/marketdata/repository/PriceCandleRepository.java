@@ -21,6 +21,8 @@ public interface PriceCandleRepository
             String symbol
     );
 
+    Optional<PriceCandle> findTop1BySymbolOrderByTradeDateDesc(String symbol);
+
     // (Optional, future use) recent candles
     List<PriceCandle> findTop200BySymbolOrderByTradeDateDesc(
             String symbol

@@ -46,6 +46,15 @@ public class AlphaVantageDailyProvider implements MarketDataProvider {
             if (date.isBefore(from) || date.isAfter(to)) continue;
 
             JsonNode v = entry.getValue();
+            if (v == null ||
+                    v.get("1. open") == null ||
+                    v.get("2. high") == null ||
+                    v.get("3. low") == null ||
+                    v.get("4. close") == null ||
+                    v.get("5. volume") == null ||
+                    v.get("4. close").isNull()) {
+                continue; // skip malformed rows
+            }
             out.add(new DailyCandle(
                     date,
                     new BigDecimal(v.get("1. open").asText()),
