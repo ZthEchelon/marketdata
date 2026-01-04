@@ -2,11 +2,10 @@ server:
   port: 8080
 
 marketdata:
-  finnhub:
-    base-url: https://finnhub.io/api/v1
-    api-key: ${FINNHUB_API_KEY:}
-  symbols: AAPL,MSFT,AMZN,GOOGL,NVDA,TSLA,META,BRK.B,JPM,V,MA,UNH,HD,COST,AVGO,LLY,XOM,KO,PEP,JNJ
-
+  alphavantage:
+    base-url: https://www.alphavantage.co
+    api-key: ${ALPHAVANTAGE_API_KEY:}
+    outputsize: compact
 
 spring:
   datasource:
