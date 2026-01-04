@@ -58,8 +58,11 @@
   <main>
     <div class="card">
       <h1>Latest Daily Candles</h1>
-      <p>Shows the most recent trading day for each active watchlist symbol (last available candle).</p>
-      <button id="refresh-btn">Refresh</button>
+      <p>Shows the most recent trading day for each active watchlist symbol (last available candle). Toggle to view inactive symbols with stored data.</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
+        <button id="refresh-btn">Refresh</button>
+        <button id="toggle-btn">Show Inactive</button>
+      </div>
       <div class="status" id="status"></div>
       <div id="table-wrap"></div>
     </div>
@@ -67,8 +70,10 @@
 
   <script>
     const refreshBtn = document.getElementById('refresh-btn');
+    const toggleBtn = document.getElementById('toggle-btn');
     const statusEl = document.getElementById('status');
     const tableWrap = document.getElementById('table-wrap');
+    let showInactive = false;
 
     const setStatus = (msg, isError=false) => {
       statusEl.textContent = msg || '';
@@ -78,12 +83,13 @@
     async function loadSummary() {
       setStatus('Loading...');
       refreshBtn.disabled = true;
+      toggleBtn.disabled = true;
       try {
-        const res = await fetch('/api/v1/market/summary');
+        const res = await fetch('/api/v1/market/summary?active=' + (!showInactive));
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (!data.length) {
-          setStatus('No data available for watchlist.');
+          setStatus('No data available for ' + (showInactive ? 'inactive' : 'active') + ' symbols.');
           tableWrap.innerHTML = '';
           return;
         }
@@ -94,6 +100,7 @@
         tableWrap.innerHTML = '';
       } finally {
         refreshBtn.disabled = false;
+        toggleBtn.disabled = false;
       }
     }
 
@@ -128,6 +135,11 @@
     }
 
     refreshBtn.addEventListener('click', loadSummary);
+    toggleBtn.addEventListener('click', () => {
+      showInactive = !showInactive;
+      toggleBtn.textContent = showInactive ? 'Show Active' : 'Show Inactive';
+      loadSummary();
+    });
     loadSummary();
   </script>
 </body>

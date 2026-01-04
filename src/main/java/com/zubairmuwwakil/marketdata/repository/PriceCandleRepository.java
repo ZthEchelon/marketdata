@@ -23,6 +23,9 @@ public interface PriceCandleRepository
 
     Optional<PriceCandle> findTop1BySymbolOrderByTradeDateDesc(String symbol);
 
+    @org.springframework.data.jpa.repository.Query("select distinct p.symbol from PriceCandle p")
+    List<String> findDistinctSymbols();
+
     // (Optional, future use) recent candles
     List<PriceCandle> findTop200BySymbolOrderByTradeDateDesc(
             String symbol

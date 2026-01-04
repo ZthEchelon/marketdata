@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Indicator Visualizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#0f172a; --panel:#111827; --accent:#10b981; --muted:#94a3b8; --border:#1f2937; --text:#e5e7eb; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:radial-gradient(120% 120% at 0% 20%, #0b1326, #0f172a 45%, #0b1326 90%); color:var(--text); font-family:"Space Grotesk", system-ui, sans-serif; min-height:100vh; }
+    header { padding:24px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); }
+    main { max-width:1100px; margin:0 auto; padding:20px; }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:18px; box-shadow:0 15px 40px rgba(0,0,0,0.25); }
+    h1 { margin:0 0 8px; font-size:22px; }
+    p { margin:0 0 12px; color:var(--muted); }
+    label { display:block; margin-bottom:6px; color:var(--muted); font-size:13px; }
+    select, input { width:100%; padding:11px 12px; border-radius:10px; border:1px solid var(--border); background:#0b1221; color:var(--text); font-size:14px; }
+    button { border:none; border-radius:10px; padding:10px 12px; background:var(--accent); color:#052e16; font-weight:600; cursor:pointer; }
+    .status { margin-top:8px; color:var(--muted); }
+    .status.error { color:#f87171; }
+    canvas { width:100%; height:260px; background:#0b1221; border:1px solid var(--border); border-radius:12px; margin-top:12px; }
+    table { width:100%; border-collapse:collapse; margin-top:12px; }
+    th, td { padding:8px 10px; border-bottom:1px solid var(--border); font-family:"IBM Plex Mono", monospace; font-size:12px; }
+    th { color:var(--muted); text-align:left; }
+  </style>
+</head>
+<body>
+  <header>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <div style="font-weight:600;">Indicator Visualizer</div>
+      <a href="/" style="color:var(--accent); text-decoration:none;">← Back to console</a>
+    </div>
+    <a href="/watchlist.html" style="color:var(--accent); text-decoration:none;">Watchlist Snapshot</a>
+  </header>
+  <main>
+    <div class="card">
+      <h1>Plot RSI and MACD</h1>
+      <p>Select a symbol to view recent indicators and the latest close.</p>
+      <div style="display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); align-items:end;">
+        <div>
+          <label for="symbol-select">Symbol</label>
+          <select id="symbol-select">
+            <option value="">-- Select symbol --</option>
+          </select>
+        </div>
+        <div>
+          <button id="load-btn">Load Indicators</button>
+        </div>
+      </div>
+      <div class="status" id="status"></div>
+      <div class="status" id="quote"></div>
+      <canvas id="rsi-canvas"></canvas>
+      <canvas id="macd-canvas"></canvas>
+      <div id="table-wrap"></div>
+    </div>
+  </main>
+
+  <script>
+    const symbolSelect = document.getElementById('symbol-select');
+    const loadBtn = document.getElementById('load-btn');
+    const statusEl = document.getElementById('status');
+    const quoteEl = document.getElementById('quote');
+    const rsiCanvas = document.getElementById('rsi-canvas');
+    const macdCanvas = document.getElementById('macd-canvas');
+    const tableWrap = document.getElementById('table-wrap');
+
+    const setStatus = (msg, isError=false) => {
+      statusEl.textContent = msg || '';
+      statusEl.className = 'status' + (isError ? ' error' : '');
+    };
+
+    async function loadSymbols() {
+      try {
+        const res = await fetch('/api/v1/market/summary?active=true');
+        if (!res.ok) return;
+        const data = await res.json();
+        symbolSelect.innerHTML = '<option value="">-- Select symbol --</option>' +
+          data.map(s => `<option value="${s.symbol}">${s.symbol} (${s.tradeDate})</option>`).join('');
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    function drawLine(canvas, points, color, label) {
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width = canvas.clientWidth;
+      const h = canvas.height = canvas.clientHeight;
+      ctx.clearRect(0,0,w,h);
+      if (!points.length) return;
+      const ys = points.map(p => p.y);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+      const spanY = maxY - minY || 1;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      points.forEach((p,i) => {
+        const x = (i/(points.length-1)) * (w-20) + 10;
+        const y = h - ((p.y - minY)/spanY) * (h-20) - 10;
+        if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      });
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.font = '12px Space Grotesk';
+      ctx.fillText(label, 12, 16);
+    }
+
+    function drawMacd(points) {
+      const ctx = macdCanvas.getContext('2d');
+      const w = macdCanvas.width = macdCanvas.clientWidth;
+      const h = macdCanvas.height = macdCanvas.clientHeight;
+      ctx.clearRect(0,0,w,h);
+      if (!points.length) return;
+      const macdVals = points.map(p => p.macd);
+      const signalVals = points.map(p => p.signal);
+      const histVals = points.map(p => p.histogram);
+      const all = macdVals.concat(signalVals).concat(histVals);
+      const minY = Math.min(...all);
+      const maxY = Math.max(...all);
+      const spanY = maxY - minY || 1;
+
+      // Histogram bars
+      histVals.forEach((yVal, i) => {
+        const x = (i/(points.length-1)) * (w-20) + 10;
+        const y = h - ((yVal - minY)/spanY) * (h-20) - 10;
+        const zeroY = h - ((0 - minY)/spanY) * (h-20) - 10;
+        ctx.fillStyle = yVal >= 0 ? 'rgba(16,185,129,0.6)' : '#f87171';
+        ctx.fillRect(x-3, Math.min(y, zeroY), 6, Math.abs(zeroY - y));
+      });
+
+      const toLinePoints = (vals) => vals.map((y,i) => ({y, i}));
+      const plotLine = (vals, color) => {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        vals.forEach((yVal,i) => {
+          const x = (i/(vals.length-1)) * (w-20) + 10;
+          const y = h - ((yVal - minY)/spanY) * (h-20) - 10;
+          if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        });
+        ctx.stroke();
+      };
+      plotLine(macdVals, '#10b981');
+      plotLine(signalVals, '#60a5fa');
+      ctx.fillStyle = '#10b981';
+      ctx.font = '12px Space Grotesk';
+      ctx.fillText('MACD (green) / Signal (blue)', 12, 16);
+    }
+
+    function renderTable(data) {
+      const rows = data.map(d => `
+        <tr>
+          <td>${d.tradeDate}</td>
+          <td>${d.type}</td>
+          <td>${Number(d.value).toFixed(4)}</td>
+        </tr>
+      `).join('');
+      tableWrap.innerHTML = `
+        <table>
+          <thead><tr><th>Date</th><th>Type</th><th>Value</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    async function loadQuote(sym) {
+      try {
+        const res = await fetch(`/api/v1/market/summary?active=false`);
+        const resActive = await fetch(`/api/v1/market/summary?active=true`);
+        const dataInactive = res.ok ? await res.json() : [];
+        const dataActive = resActive.ok ? await resActive.json() : [];
+        const combined = [...dataActive, ...dataInactive];
+        const row = combined.find(r => r.symbol === sym);
+        if (row) {
+          quoteEl.textContent = `Latest close (${row.tradeDate}): O ${Number(row.open).toFixed(2)} H ${Number(row.high).toFixed(2)} L ${Number(row.low).toFixed(2)} C ${Number(row.close).toFixed(2)} V ${row.volume.toLocaleString()}`;
+          quoteEl.className = 'status';
+        } else {
+          quoteEl.textContent = '';
+        }
+      } catch {
+        quoteEl.textContent = '';
+      }
+    }
+
+    async function loadIndicators() {
+      const sym = symbolSelect.value;
+      if (!sym) {
+        setStatus('Select a symbol.', true);
+        return;
+      }
+      setStatus('Loading indicators...');
+      loadBtn.disabled = true;
+      try {
+        await loadQuote(sym);
+        const res = await fetch(`/api/v1/indicators/${encodeURIComponent(sym)}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!data.length) {
+          setStatus('No indicators found.', true);
+          tableWrap.innerHTML = '';
+          rsiCanvas.getContext('2d').clearRect(0,0,rsiCanvas.width,rsiCanvas.height);
+          macdCanvas.getContext('2d').clearRect(0,0,macdCanvas.width,macdCanvas.height);
+          return;
+        }
+        renderTable(data);
+        const rsiPoints = data.filter(d => d.type === 'RSI_14').map((d,i) => ({y:Number(d.value), i}));
+        drawLine(rsiCanvas, rsiPoints, '#10b981', 'RSI 14');
+        const macdData = [];
+        const byDate = {};
+        data.forEach(d => {
+          if (!byDate[d.tradeDate]) byDate[d.tradeDate] = {};
+          byDate[d.tradeDate][d.type] = Number(d.value);
+        });
+        Object.entries(byDate).forEach(([,v]) => {
+          if (v.MACD !== undefined && v.MACD_SIGNAL !== undefined && v.MACD_HISTOGRAM !== undefined) {
+            macdData.push({macd:v.MACD, signal:v.MACD_SIGNAL, histogram:v.MACD_HISTOGRAM});
+          }
+        });
+        drawMacd(macdData.slice(-120)); // plot recent
+        setStatus(`Loaded ${data.length} rows for ${sym}`);
+      } catch (err) {
+        setStatus(`Failed: ${err.message}`, true);
+      } finally {
+        loadBtn.disabled = false;
+      }
+    }
+
+    loadBtn.addEventListener('click', loadIndicators);
+    loadSymbols();
+  </script>
+</body>
+</html>

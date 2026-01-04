@@ -159,6 +159,9 @@
       <a href="/watchlist.html" style="text-decoration:none;">
         <span class="pill">Watchlist Snapshot</span>
       </a>
+      <a href="/indicators.html" style="text-decoration:none;">
+        <span class="pill">Indicator Visualizer</span>
+      </a>
       <div class="pill">Status: <span id="status-dot">Not connected</span></div>
       <div class="pill">Quota: <span id="quota-label">--/--</span></div>
     </div>
@@ -168,6 +171,17 @@
     <section class="card" id="ingest-card">
       <h2>Ingest Daily Data</h2>
       <p>Trigger the pipeline to fetch candles for active watchlist symbols and compute RSI/MACD.</p>
+      <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:12px; background:#0b1221;">
+        <strong>How to use:</strong>
+        <ul style="margin:8px 0 0 16px; color:var(--muted); padding-left:16px;">
+          <li>Step 0 — Get an API key (Alpha Vantage link below).</li>
+          <li>Step 1 — Enter one stock in the watchlist.</li>
+          <li>Step 2 — Run ingestion.</li>
+          <li>Step 3 — Clear that stock from the watchlist.</li>
+          <li>Repeat Steps 1–3 for each stock you want to backfill.</li>
+          <li>When all stocks are ready, add them all to the watchlist, refresh, and view.</li>
+        </ul>
+      </div>
       <div class="row" style="margin-bottom:12px;">
         <div>
           <label for="api-key">Alpha Vantage API Key</label>

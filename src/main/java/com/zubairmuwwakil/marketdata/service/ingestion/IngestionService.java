@@ -50,12 +50,9 @@ public class IngestionService {
         ZoneId ny = ZoneId.of("America/New_York");
         LocalDate runDate = LocalDate.now(ny);
 
-        var activeSymbols =
-                watchlistRepo.findAllByActiveTrueOrderBySymbolAsc();
-
+        var activeSymbols = watchlistRepo.findAllByActiveTrueOrderBySymbolAsc();
         int expected = activeSymbols.size();
         int remainingQuota = quotaService.remainingToday();
-        int willAttempt = Math.min(expected, remainingQuota);
 
         int processed = 0;
         int failed = 0;
@@ -65,7 +62,7 @@ public class IngestionService {
         LocalDate from = to.minusDays(120); // warmup for RSI/MACD
 
         // No quota → fail fast
-        if (willAttempt == 0 && expected > 0) {
+        if (remainingQuota == 0 && expected > 0) {
             return runRepo.save(
                     PipelineRun.builder()
                             .runDate(runDate)
@@ -80,7 +77,6 @@ public class IngestionService {
         }
 
         List<String> symbolsToProcess = activeSymbols.stream()
-                .limit(willAttempt)
                 .map(s -> s.getSymbol().trim().toUpperCase(Locale.ROOT))
                 .toList();
 
@@ -90,6 +86,10 @@ public class IngestionService {
                 if (changed) {
                     processed++;
                 }
+            } catch (IllegalStateException quotaEx) {
+                failed++;
+                lastError = symbol + ": " + quotaEx.getMessage();
+                break; // quota exhausted mid-run
             } catch (Exception e) {
                 failed++;
                 lastError = symbol + ": " + e.getMessage();
@@ -107,7 +107,7 @@ public class IngestionService {
 
         String errorMessage =
                 failed == 0 ? null
-                        : "Failed " + failed + "/" + willAttempt +
+                        : "Failed " + failed + "/" + expected +
                           ". Last error: " + lastError;
 
         return runRepo.save(
