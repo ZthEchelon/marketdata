@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
 import javax.sql.DataSource;
+import org.flywaydb.core.Flyway;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.regex.Matcher;
@@ -90,5 +91,19 @@ public class RenderDatabaseConfig {
 
         log.warn("DATABASE_URL was present but could not be parsed; falling back to Spring properties");
         return null;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(Flyway.class)
+    public Flyway flyway(DataSource dataSource, Environment env) {
+        if (dataSource == null) return null;
+        String locations = env.getProperty("spring.flyway.locations", "classpath:db/migration");
+        Flyway flyway = Flyway.configure()
+                .dataSource(dataSource)
+                .locations(locations)
+                .load();
+        flyway.migrate();
+        log.info("Ran Flyway migrations using custom Flyway bean");
+        return flyway;
     }
 }
