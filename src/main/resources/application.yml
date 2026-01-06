@@ -9,9 +9,9 @@ marketdata:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5433/marketdata
-    username: marketdata
-    password: marketdata
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/marketdata}
+    username: ${SPRING_DATASOURCE_USERNAME:marketdata}
+    password: ${SPRING_DATASOURCE_PASSWORD:marketdata}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -21,6 +21,9 @@ spring:
 
   flyway:
     enabled: true
+    url: ${SPRING_FLYWAY_URL:${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/marketdata}}
+    user: ${SPRING_FLYWAY_USER:${SPRING_DATASOURCE_USERNAME:marketdata}}
+    password: ${SPRING_FLYWAY_PASSWORD:${SPRING_DATASOURCE_PASSWORD:marketdata}}
     locations: classpath:db/migration
 
 logging:
