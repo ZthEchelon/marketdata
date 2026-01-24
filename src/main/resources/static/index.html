@@ -6,7 +6,7 @@
   <title>MarketLens — Market Data Pipeline</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #f4f6fb;
@@ -18,20 +18,34 @@
       --primary: #2563eb;
       --primary-strong: #1d4ed8;
       --accent: #14b8a6;
+      --accent-strong: #0ea5e9;
       --warning: #f59e0b;
       --danger: #ef4444;
       --shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+      --glow: 0 0 0 1px rgba(37, 99, 235, 0.1), 0 20px 50px rgba(37, 99, 235, 0.18);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: "Manrope", system-ui, -apple-system, sans-serif;
+      font-family: "Plus Jakarta Sans", "Manrope", system-ui, -apple-system, sans-serif;
       color: var(--text);
       min-height: 100vh;
       background:
-        radial-gradient(900px 420px at 5% -10%, rgba(37, 99, 235, 0.18), transparent 60%),
-        radial-gradient(900px 420px at 95% 0%, rgba(20, 184, 166, 0.16), transparent 60%),
+        radial-gradient(900px 420px at 5% -10%, rgba(37, 99, 235, 0.22), transparent 60%),
+        radial-gradient(900px 420px at 95% 0%, rgba(20, 184, 166, 0.18), transparent 60%),
         var(--bg);
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: -20% -10% auto -10%;
+      height: 60vh;
+      background: linear-gradient(120deg, rgba(37, 99, 235, 0.18), rgba(20, 184, 166, 0.14));
+      filter: blur(60px);
+      opacity: 0.6;
+      transform: translate3d(0,0,0);
+      animation: drift 14s ease-in-out infinite;
+      z-index: -1;
     }
     a { color: inherit; }
     header {
@@ -63,13 +77,14 @@
       width: 36px;
       height: 36px;
       border-radius: 12px;
-      background: linear-gradient(135deg, var(--primary), var(--accent));
+      background: linear-gradient(135deg, var(--primary), var(--accent-strong));
       box-shadow: 0 12px 26px rgba(37, 99, 235, 0.22);
       display: inline-flex;
       align-items: center;
       justify-content: center;
       color: #ffffff;
       font-weight: 800;
+      animation: pulse 4s ease-in-out infinite;
     }
     .nav-links {
       display: flex;
@@ -130,6 +145,14 @@
       padding: 20px;
       box-shadow: var(--shadow);
     }
+    .panel, .kpi, .hero-card {
+      transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+    }
+    .panel:hover, .kpi:hover, .hero-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--glow);
+      border-color: rgba(37, 99, 235, 0.2);
+    }
     .hero-card {
       background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(20, 184, 166, 0.08));
     }
@@ -162,10 +185,23 @@
     }
     .button,
     button.button {
-      display: inline-flex;
+      background: rgba(255,255,255,0.75);
       align-items: center;
       justify-content: center;
+      backdrop-filter: blur(10px);
       gap: 8px;
+    @keyframes drift {
+      0%, 100% { transform: translate3d(0,0,0); }
+      50% { transform: translate3d(40px, 10px, 0); }
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 12px 26px rgba(37, 99, 235, 0.22); }
+      50% { transform: scale(1.05); box-shadow: 0 18px 38px rgba(37, 99, 235, 0.32); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      body::before, .logo { animation: none; }
+      .panel, .kpi, .hero-card, .button { transition: none; }
+    }
       padding: 12px 16px;
       border-radius: 12px;
       border: 1px solid transparent;
@@ -176,6 +212,8 @@
       transition: transform 120ms ease, box-shadow 120ms ease;
       font-family: "Manrope", sans-serif;
       text-decoration: none;
+      position: relative;
+      overflow: hidden;
     }
     .button.secondary,
     button.button.secondary {
@@ -183,6 +221,15 @@
       color: var(--text);
       border-color: var(--border);
     }
+    .button::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.35), transparent 45%);
+      opacity: 0;
+      transition: opacity 200ms ease;
+    }
+    .button:hover::after { opacity: 1; }
     .button:hover { transform: translateY(-1px); box-shadow: 0 16px 32px rgba(37, 99, 235, 0.18); }
     button:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; transform: none; }
     .overview-grid {
@@ -318,6 +365,12 @@
         <a href="/">Workspace</a>
         <a href="/watchlist.html">Watchlist</a>
         <a href="/indicators.html">Indicators</a>
+        <a href="/runs.html">Runs</a>
+        <a href="/quality.html">Quality</a>
+        <a href="/actions.html">Actions</a>
+        <a href="/calendar.html">Calendar</a>
+        <a href="/keys.html">Keys</a>
+        <a href="/status.html">Status</a>
       </div>
       <div class="nav-meta">
         <span class="chip">Status: <span id="status-dot">Not connected</span></span>
@@ -778,16 +831,13 @@
           <td>${d.tradeDate}</td>
           <td>${d.type}</td>
           <td>${Number(d.value).toFixed(4)}</td>
-            if (statusKpi) statusKpi.textContent = 'Connected';
         </tr>
       `).join('');
       results.innerHTML = `
-            if (statusKpi) statusKpi.textContent = 'Degraded';
         <table>
           <thead>
             <tr>
               <th>Symbol</th>
-          if (statusKpi) statusKpi.textContent = 'Offline';
               <th>Trade Date</th>
               <th>Type</th>
               <th>Value</th>
@@ -798,21 +848,28 @@
       `;
     }
 
-    // Update status/quota on load
-    (async function init() {
+    async function updateStatus() {
       try {
-        const res = await fetch('/actuator/health');
+        const res = await api('/api/v1/health');
         if (res.ok) {
           statusDot.textContent = 'API reachable';
           statusDot.style.color = 'var(--accent)';
+          if (statusKpi) statusKpi.textContent = 'Connected';
         } else {
           statusDot.textContent = 'API unreachable';
           statusDot.style.color = 'var(--danger)';
+          if (statusKpi) statusKpi.textContent = 'Degraded';
         }
       } catch {
         statusDot.textContent = 'API unreachable';
         statusDot.style.color = 'var(--danger)';
+        if (statusKpi) statusKpi.textContent = 'Offline';
       }
+    }
+
+    // Update status/quota on load
+    (async function init() {
+      await updateStatus();
       await refreshQuota();
       await loadWatchlist();
       await loadSummaries();

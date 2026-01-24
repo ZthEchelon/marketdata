@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarketLens — Runs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --surface: #ffffff;
+      --surface-alt: #f8fafc;
+      --text: #0b1220;
+      --muted: #5f6b85;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-strong: #1d4ed8;
+      --accent: #14b8a6;
+      --accent-strong: #0ea5e9;
+      --danger: #ef4444;
+      --shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+      --glow: 0 0 0 1px rgba(37, 99, 235, 0.1), 0 20px 50px rgba(37, 99, 235, 0.18);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Plus Jakarta Sans", "Manrope", system-ui, sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      background:
+        radial-gradient(900px 420px at 5% -10%, rgba(37, 99, 235, 0.22), transparent 60%),
+        radial-gradient(900px 420px at 95% 0%, rgba(20, 184, 166, 0.18), transparent 60%),
+        var(--bg);
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(14px);
+      background: rgba(244, 246, 251, 0.92);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; }
+    .logo {
+      width: 36px; height: 36px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), var(--accent-strong));
+      display: inline-flex; align-items: center; justify-content: center; color: #fff; font-weight: 800;
+      box-shadow: 0 12px 26px rgba(37, 99, 235, 0.22);
+    }
+    .nav-links { display: flex; gap: 12px; flex-wrap: wrap; }
+    .nav-links a { text-decoration: none; color: var(--muted); font-weight: 600; padding: 8px 12px; border-radius: 999px; }
+    .nav-links a:hover { color: var(--text); background: rgba(37, 99, 235, 0.08); }
+    main { max-width: 1180px; margin: 0 auto; padding: 28px 24px 80px; display: grid; gap: 18px; }
+    .hero { background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(20, 184, 166, 0.08)); border-radius: 22px; border: 1px solid var(--border); padding: 24px; box-shadow: var(--shadow); }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 20px; box-shadow: var(--shadow); transition: transform 220ms ease, box-shadow 220ms ease; }
+    .card:hover { transform: translateY(-2px); box-shadow: var(--glow); }
+    .button { border: none; border-radius: 12px; padding: 12px 16px; background: linear-gradient(135deg, var(--primary-strong), var(--primary)); color: #fff; font-weight: 700; cursor: pointer; }
+    .button.secondary { background: #fff; color: var(--text); border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; font-family: "IBM Plex Mono", monospace; font-size: 12px; }
+    th { color: var(--muted); }
+    .status { margin-top: 8px; color: var(--muted); font-size: 13px; }
+    .status.error { color: var(--danger); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <div class="brand"><div class="logo">ML</div>MarketLens</div>
+      <div class="nav-links">
+        <a href="/">Workspace</a>
+        <a href="/watchlist.html">Watchlist</a>
+        <a href="/indicators.html">Indicators</a>
+        <a href="/runs.html">Runs</a>
+        <a href="/quality.html">Quality</a>
+        <a href="/actions.html">Actions</a>
+        <a href="/calendar.html">Calendar</a>
+        <a href="/keys.html">Keys</a>
+        <a href="/status.html">Status</a>
+      </div>
+      <button id="access-key-btn" class="button secondary">Set API Key</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>Runs & backfills</h1>
+      <p>Track ingestion history, retry visibility, and run metadata for transparency.</p>
+    </section>
+
+    <section class="card">
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+        <button id="refresh-btn" class="button">Refresh runs</button>
+        <button id="backfill-btn" class="button secondary">Trigger backfill</button>
+      </div>
+      <div class="status" id="status"></div>
+      <div id="table"></div>
+    </section>
+  </main>
+
+  <script>
+    const accessKeyBtn = document.getElementById('access-key-btn');
+    const refreshBtn = document.getElementById('refresh-btn');
+    const backfillBtn = document.getElementById('backfill-btn');
+    const statusEl = document.getElementById('status');
+    const tableEl = document.getElementById('table');
+
+    let accessKey = localStorage.getItem('marketlens_api_key') || '';
+    const api = (path, opts = {}) => fetch(path, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessKey ? { 'X-API-Key': accessKey } : {})
+      },
+      ...opts
+    });
+
+    const setStatus = (msg, isError=false) => {
+      statusEl.textContent = msg || '';
+      statusEl.className = 'status' + (isError ? ' error' : '');
+    };
+
+    const promptKey = () => {
+      const next = prompt('Enter MarketLens API Key (default: change-me-user)', accessKey || '');
+      if (next === null) return false;
+      accessKey = next.trim();
+      if (accessKey) localStorage.setItem('marketlens_api_key', accessKey);
+      else localStorage.removeItem('marketlens_api_key');
+      return true;
+    };
+
+    accessKeyBtn.addEventListener('click', promptKey);
+
+    async function loadRuns() {
+      if (!accessKey && !promptKey()) return;
+      setStatus('Loading runs...');
+      try {
+        const res = await api('/api/v1/ingestion/runs');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        renderTable(data);
+        setStatus(`Loaded ${data.length} runs.`);
+      } catch (err) {
+        setStatus(`Failed: ${err.message}`, true);
+      }
+    }
+
+    function renderTable(rows) {
+      if (!rows.length) {
+        tableEl.innerHTML = '<div class="status">No runs yet.</div>';
+        return;
+      }
+      tableEl.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Processed</th>
+              <th>Expected</th>
+              <th>Retries</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(r => `
+              <tr>
+                <td>${r.id}</td>
+                <td>${r.runDate}</td>
+                <td>${r.runType}</td>
+                <td>${r.status}</td>
+                <td>${r.symbolsProcessed ?? '-'}</td>
+                <td>${r.symbolsExpected ?? '-'}</td>
+                <td>${r.retryCount ?? 0}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    backfillBtn.addEventListener('click', async () => {
+      if (!accessKey && !promptKey()) return;
+      const symbols = prompt('Symbols (comma separated) or leave blank for watchlist', '');
+      const from = prompt('From date (YYYY-MM-DD)', '2024-01-01');
+      const to = prompt('To date (YYYY-MM-DD)', '2024-12-31');
+      if (!from || !to) return;
+      setStatus('Triggering backfill...');
+      try {
+        const res = await api('/api/v1/ingestion/backfill', {
+          method: 'POST',
+          body: JSON.stringify({
+            symbols: symbols ? symbols.split(',').map(s => s.trim()).filter(Boolean) : [],
+            from,
+            to
+          })
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setStatus(`Backfill started: run ${data.id}.`);
+        await loadRuns();
+      } catch (err) {
+        setStatus(`Failed: ${err.message}`, true);
+      }
+    });
+
+    refreshBtn.addEventListener('click', loadRuns);
+    loadRuns();
+  </script>
+</body>
+</html>

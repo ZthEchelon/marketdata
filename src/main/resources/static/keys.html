@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarketLens — Keys</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#f4f6fb; --surface:#fff; --surface-alt:#f8fafc; --text:#0b1220; --muted:#5f6b85; --border:#e2e8f0; --primary:#2563eb; --primary-strong:#1d4ed8; --accent:#14b8a6; --accent-strong:#0ea5e9; --danger:#ef4444; --shadow:0 18px 40px rgba(15,23,42,.08); --glow:0 0 0 1px rgba(37,99,235,.1),0 20px 50px rgba(37,99,235,.18);} *{box-sizing:border-box;} body{margin:0;font-family:"Plus Jakarta Sans","Manrope",system-ui,sans-serif;color:var(--text);min-height:100vh;background:radial-gradient(900px 420px at 5% -10%, rgba(37,99,235,.22), transparent 60%),radial-gradient(900px 420px at 95% 0%, rgba(20,184,166,.18), transparent 60%),var(--bg);} header{position:sticky;top:0;z-index:10;backdrop-filter:blur(14px);background:rgba(244,246,251,.92);border-bottom:1px solid var(--border);} .nav{max-width:1180px;margin:0 auto;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;} .brand{display:flex;align-items:center;gap:12px;font-weight:700;} .logo{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--accent-strong));display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:800;box-shadow:0 12px 26px rgba(37,99,235,.22);} .nav-links{display:flex;gap:12px;flex-wrap:wrap;} .nav-links a{text-decoration:none;color:var(--muted);font-weight:600;padding:8px 12px;border-radius:999px;} .nav-links a:hover{color:var(--text);background:rgba(37,99,235,.08);} main{max-width:1180px;margin:0 auto;padding:28px 24px 80px;display:grid;gap:18px;} .hero{background:linear-gradient(135deg,rgba(37,99,235,.1),rgba(20,184,166,.08));border-radius:22px;border:1px solid var(--border);padding:24px;box-shadow:var(--shadow);} .card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;box-shadow:var(--shadow);} label{display:block;margin-bottom:6px;color:var(--muted);font-size:13px;font-weight:600;} input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);} .button{border:none;border-radius:12px;padding:12px 16px;background:linear-gradient(135deg,var(--primary-strong),var(--primary));color:#fff;font-weight:700;cursor:pointer;} .button.secondary{background:#fff;color:var(--text);border:1px solid var(--border);} .status{margin-top:8px;color:var(--muted);font-size:13px;} .status.error{color:var(--danger);} 
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <div class="brand"><div class="logo">ML</div>MarketLens</div>
+      <div class="nav-links">
+        <a href="/">Workspace</a>
+        <a href="/watchlist.html">Watchlist</a>
+        <a href="/indicators.html">Indicators</a>
+        <a href="/runs.html">Runs</a>
+        <a href="/quality.html">Quality</a>
+        <a href="/actions.html">Actions</a>
+        <a href="/calendar.html">Calendar</a>
+        <a href="/keys.html">Keys</a>
+        <a href="/status.html">Status</a>
+      </div>
+      <button id="access-key-btn" class="button secondary">Set API Key</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>API keys & usage</h1>
+      <p>Manage your MarketLens key and provider key in one place.</p>
+    </section>
+
+    <section class="card">
+      <div style="display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); align-items:end;">
+        <div>
+          <label for="marketlens-key">MarketLens API Key</label>
+          <input id="marketlens-key" placeholder="change-me-user">
+        </div>
+        <div>
+          <button id="save-marketlens" class="button secondary">Save MarketLens Key</button>
+        </div>
+        <div>
+          <label for="provider-key">Alpha Vantage API Key</label>
+          <input id="provider-key" placeholder="Paste Alpha Vantage key">
+        </div>
+        <div>
+          <button id="save-provider" class="button">Save Provider Key</button>
+        </div>
+      </div>
+      <div class="status" id="status"></div>
+    </section>
+
+    <section class="card">
+      <h3>Usage</h3>
+      <div class="status" id="quota"></div>
+      <button id="refresh-quota" class="button secondary">Refresh quota</button>
+    </section>
+  </main>
+
+  <script>
+    const accessKeyBtn = document.getElementById('access-key-btn');
+    const marketlensKeyInput = document.getElementById('marketlens-key');
+    const providerKeyInput = document.getElementById('provider-key');
+    const saveMarketlens = document.getElementById('save-marketlens');
+    const saveProvider = document.getElementById('save-provider');
+    const statusEl = document.getElementById('status');
+    const quotaEl = document.getElementById('quota');
+    const refreshQuota = document.getElementById('refresh-quota');
+
+    let accessKey = localStorage.getItem('marketlens_api_key') || '';
+    marketlensKeyInput.value = accessKey;
+
+    const api = (path, opts = {}) => fetch(path, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessKey ? { 'X-API-Key': accessKey } : {})
+      },
+      ...opts
+    });
+
+    const setStatus = (msg, isError=false) => {
+      statusEl.textContent = msg || '';
+      statusEl.className = 'status' + (isError ? ' error' : '');
+    };
+
+    const promptKey = () => {
+      const next = prompt('Enter MarketLens API Key (default: change-me-user)', accessKey || '');
+      if (next === null) return false;
+      accessKey = next.trim();
+      if (accessKey) localStorage.setItem('marketlens_api_key', accessKey);
+      else localStorage.removeItem('marketlens_api_key');
+      marketlensKeyInput.value = accessKey;
+      return true;
+    };
+
+    accessKeyBtn.addEventListener('click', promptKey);
+
+    saveMarketlens.addEventListener('click', () => {
+      accessKey = (marketlensKeyInput.value || '').trim();
+      if (accessKey) {
+        localStorage.setItem('marketlens_api_key', accessKey);
+        setStatus('MarketLens API key saved.');
+      } else {
+        localStorage.removeItem('marketlens_api_key');
+        setStatus('MarketLens API key cleared.');
+      }
+    });
+
+    saveProvider.addEventListener('click', async () => {
+      if (!accessKey && !promptKey()) return;
+      const key = (providerKeyInput.value || '').trim();
+      if (!key) return setStatus('Enter provider key.', true);
+      setStatus('Saving provider key...');
+      try {
+        const res = await api('/api/v1/admin/api-key', {
+          method: 'POST',
+          body: JSON.stringify({ apiKey: key })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+        setStatus('Provider key saved.');
+      } catch (err) {
+        setStatus(`Failed: ${err.message}`, true);
+      }
+    });
+
+    refreshQuota.addEventListener('click', async () => {
+      if (!accessKey && !promptKey()) return;
+      quotaEl.textContent = 'Loading quota...';
+      try {
+        const res = await api('/api/v1/admin/quota');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        quotaEl.textContent = `Remaining ${data.remaining}/${data.limit}`;
+      } catch (err) {
+        quotaEl.textContent = `Failed: ${err.message}`;
+      }
+    });
+  </script>
+</body>
+</html>

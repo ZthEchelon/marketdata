@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarketLens — Data Quality</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#f4f6fb; --surface:#fff; --surface-alt:#f8fafc; --text:#0b1220; --muted:#5f6b85; --border:#e2e8f0; --primary:#2563eb; --primary-strong:#1d4ed8; --accent:#14b8a6; --accent-strong:#0ea5e9; --danger:#ef4444; --shadow:0 18px 40px rgba(15,23,42,.08); --glow:0 0 0 1px rgba(37,99,235,.1),0 20px 50px rgba(37,99,235,.18);} *{box-sizing:border-box;} body{margin:0;font-family:"Plus Jakarta Sans","Manrope",system-ui,sans-serif;color:var(--text);min-height:100vh;background:radial-gradient(900px 420px at 5% -10%, rgba(37,99,235,.22), transparent 60%),radial-gradient(900px 420px at 95% 0%, rgba(20,184,166,.18), transparent 60%),var(--bg);} header{position:sticky;top:0;z-index:10;backdrop-filter:blur(14px);background:rgba(244,246,251,.92);border-bottom:1px solid var(--border);} .nav{max-width:1180px;margin:0 auto;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;} .brand{display:flex;align-items:center;gap:12px;font-weight:700;} .logo{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--accent-strong));display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:800;box-shadow:0 12px 26px rgba(37,99,235,.22);} .nav-links{display:flex;gap:12px;flex-wrap:wrap;} .nav-links a{text-decoration:none;color:var(--muted);font-weight:600;padding:8px 12px;border-radius:999px;} .nav-links a:hover{color:var(--text);background:rgba(37,99,235,.08);} main{max-width:1180px;margin:0 auto;padding:28px 24px 80px;display:grid;gap:18px;} .hero{background:linear-gradient(135deg,rgba(37,99,235,.1),rgba(20,184,166,.08));border-radius:22px;border:1px solid var(--border);padding:24px;box-shadow:var(--shadow);} .card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;box-shadow:var(--shadow);transition:transform 220ms ease, box-shadow 220ms ease;} .card:hover{transform:translateY(-2px);box-shadow:var(--glow);} label{display:block;margin-bottom:6px;color:var(--muted);font-size:13px;font-weight:600;} input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);} .button{border:none;border-radius:12px;padding:12px 16px;background:linear-gradient(135deg,var(--primary-strong),var(--primary));color:#fff;font-weight:700;cursor:pointer;} .button.secondary{background:#fff;color:var(--text);border:1px solid var(--border);} .status{margin-top:8px;color:var(--muted);font-size:13px;} .status.error{color:var(--danger);} pre{background:var(--surface-alt);padding:12px;border-radius:12px;border:1px solid var(--border);overflow:auto;}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <div class="brand"><div class="logo">ML</div>MarketLens</div>
+      <div class="nav-links">
+        <a href="/">Workspace</a>
+        <a href="/watchlist.html">Watchlist</a>
+        <a href="/indicators.html">Indicators</a>
+        <a href="/runs.html">Runs</a>
+        <a href="/quality.html">Quality</a>
+        <a href="/actions.html">Actions</a>
+        <a href="/calendar.html">Calendar</a>
+        <a href="/keys.html">Keys</a>
+        <a href="/status.html">Status</a>
+      </div>
+      <button id="access-key-btn" class="button secondary">Set API Key</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>Data quality report</h1>
+      <p>Inspect missing days, duplicates, and outliers for a symbol/date range.</p>
+    </section>
+
+    <section class="card">
+      <div style="display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); align-items:end;">
+        <div>
+          <label for="symbol">Symbol</label>
+          <input id="symbol" placeholder="e.g. MSFT">
+        </div>
+        <div>
+          <label for="from">From</label>
+          <input id="from" placeholder="YYYY-MM-DD" value="2024-01-01">
+        </div>
+        <div>
+          <label for="to">To</label>
+          <input id="to" placeholder="YYYY-MM-DD" value="2024-12-31">
+        </div>
+        <div>
+          <button id="run-btn" class="button">Run report</button>
+        </div>
+      </div>
+      <div class="status" id="status"></div>
+      <pre id="output"></pre>
+    </section>
+  </main>
+
+  <script>
+    const accessKeyBtn = document.getElementById('access-key-btn');
+    const runBtn = document.getElementById('run-btn');
+    const statusEl = document.getElementById('status');
+    const output = document.getElementById('output');
+    const symbol = document.getElementById('symbol');
+    const from = document.getElementById('from');
+    const to = document.getElementById('to');
+
+    let accessKey = localStorage.getItem('marketlens_api_key') || '';
+    const api = (path, opts = {}) => fetch(path, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessKey ? { 'X-API-Key': accessKey } : {})
+      },
+      ...opts
+    });
+
+    const setStatus = (msg, isError=false) => {
+      statusEl.textContent = msg || '';
+      statusEl.className = 'status' + (isError ? ' error' : '');
+    };
+
+    const promptKey = () => {
+      const next = prompt('Enter MarketLens API Key (default: change-me-user)', accessKey || '');
+      if (next === null) return false;
+      accessKey = next.trim();
+      if (accessKey) localStorage.setItem('marketlens_api_key', accessKey);
+      else localStorage.removeItem('marketlens_api_key');
+      return true;
+    };
+
+    accessKeyBtn.addEventListener('click', promptKey);
+
+    runBtn.addEventListener('click', async () => {
+      if (!accessKey && !promptKey()) return;
+      if (!symbol.value.trim()) {
+        setStatus('Enter a symbol.', true);
+        return;
+      }
+      setStatus('Running report...');
+      try {
+        const url = `/api/v1/quality/report?symbol=${encodeURIComponent(symbol.value.trim().toUpperCase())}&from=${encodeURIComponent(from.value)}&to=${encodeURIComponent(to.value)}`;
+        const res = await api(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        output.textContent = JSON.stringify(data, null, 2);
+        setStatus('Report ready.');
+      } catch (err) {
+        setStatus(`Failed: ${err.message}`, true);
+      }
+    });
+  </script>
+</body>
+</html>
