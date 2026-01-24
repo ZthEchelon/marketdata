@@ -28,6 +28,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/",
+                                "/*.html",
                                 "/index.html",
                                 "/watchlist.html",
                                 "/indicators.html",

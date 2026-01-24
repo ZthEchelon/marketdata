@@ -2,11 +2,19 @@ package com.zubairmuwwakil.marketdata.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zubairmuwwakil.marketdata.config.ExternalApiProperties;
 import com.zubairmuwwakil.marketdata.config.MarketDataProperties;
+import com.zubairmuwwakil.marketdata.resilience.SimpleCircuitBreaker;
 import com.zubairmuwwakil.marketdata.service.ingestion.ApiKeyStore;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
+
+import java.net.http.HttpClient;
+import java.time.Duration;
+import java.util.function.Supplier;
 
 @Component
 public class AlphaVantageClient {
@@ -15,6 +23,8 @@ public class AlphaVantageClient {
     private final MarketDataProperties props;
     private final ObjectMapper objectMapper;
     private final ApiKeyStore apiKeyStore;
+    private final ExternalApiProperties externalApiProperties;
+    private final SimpleCircuitBreaker circuitBreaker;
 
     public enum KeyValidationStatus {
         VALID,
@@ -24,10 +34,14 @@ public class AlphaVantageClient {
 
     public record KeyValidationResult(KeyValidationStatus status, String message) {}
 
-    public AlphaVantageClient(MarketDataProperties props, ObjectMapper objectMapper, ApiKeyStore apiKeyStore) {
+    public AlphaVantageClient(MarketDataProperties props,
+                              ObjectMapper objectMapper,
+                              ApiKeyStore apiKeyStore,
+                              ExternalApiProperties externalApiProperties) {
         this.props = props;
         this.objectMapper = objectMapper;
         this.apiKeyStore = apiKeyStore;
+        this.externalApiProperties = externalApiProperties;
 
         var av = props.alphavantage();
         if (av == null || av.baseUrl() == null || av.baseUrl().isBlank()) {
@@ -38,9 +52,21 @@ public class AlphaVantageClient {
             this.apiKeyStore.set(av.apiKey());
         }
 
+        HttpClient httpClient = HttpClient.newBuilder()
+                .connectTimeout(externalApiProperties.getConnectTimeout())
+                .build();
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        requestFactory.setReadTimeout(externalApiProperties.getReadTimeout());
+
         this.restClient = RestClient.builder()
                 .baseUrl(av.baseUrl())
+                .requestFactory(requestFactory)
                 .build();
+        this.circuitBreaker = new SimpleCircuitBreaker(
+                externalApiProperties.getCircuitBreaker().getFailureThreshold(),
+                externalApiProperties.getCircuitBreaker().getOpenStateDuration(),
+                externalApiProperties.getCircuitBreaker().getHalfOpenMaxCalls()
+        );
     }
 
     public JsonNode timeSeriesDaily(String symbol) {
@@ -49,25 +75,39 @@ public class AlphaVantageClient {
             throw new IllegalStateException("ALPHAVANTAGE_API_KEY is missing/blank");
         }
 
-        String body = restClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/query")
-                        .queryParam("function", "TIME_SERIES_DAILY")
-                        .queryParam("symbol", symbol)
-                        .queryParam("outputsize", props.alphavantage().outputsize())
-                        .queryParam("apikey", key)
-                        .build())
-                .retrieve()
-                .onStatus(HttpStatusCode::isError, (req, res) -> {
-                    throw new RuntimeException("Alpha Vantage error: HTTP " + res.getStatusCode());
-                })
-                .body(String.class);
-
-        try {
-            return objectMapper.readTree(body);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to parse Alpha Vantage JSON: " + e.getMessage(), e);
-        }
+        return executeWithResilience(() -> {
+            String body = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/query")
+                            .queryParam("function", "TIME_SERIES_DAILY")
+                            .queryParam("symbol", symbol)
+                            .queryParam("outputsize", props.alphavantage().outputsize())
+                            .queryParam("apikey", key)
+                            .build())
+                    .retrieve()
+                    .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
+                        throw new ExternalServiceException("Alpha Vantage server error: HTTP " + res.getStatusCode(), true);
+                    })
+                    .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
+                        boolean retryable = res.getStatusCode().value() == 429;
+                        throw new ExternalServiceException("Alpha Vantage client error: HTTP " + res.getStatusCode(), retryable);
+                    })
+                    .body(String.class);
+            try {
+                JsonNode root = objectMapper.readTree(body);
+                if (root.has("Note")) {
+                    throw new ExternalServiceException("Alpha Vantage throttled request", true);
+                }
+                if (root.has("Error Message")) {
+                    throw new ExternalServiceException(root.get("Error Message").asText(), false);
+                }
+                return root;
+            } catch (ExternalServiceException ex) {
+                throw ex;
+            } catch (Exception ex) {
+                throw new ExternalServiceException("Failed to parse Alpha Vantage JSON", true, ex);
+            }
+        });
     }
 
     /**
@@ -79,7 +119,7 @@ public class AlphaVantageClient {
             return new KeyValidationResult(KeyValidationStatus.INVALID, "API key is blank");
         }
 
-        String body = restClient.get()
+        String body = executeWithResilience(() -> restClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/query")
                         .queryParam("function", "GLOBAL_QUOTE")
@@ -87,10 +127,14 @@ public class AlphaVantageClient {
                         .queryParam("apikey", key.trim())
                         .build())
                 .retrieve()
-                .onStatus(HttpStatusCode::isError, (req, res) -> {
-                    throw new RuntimeException("Alpha Vantage error: HTTP " + res.getStatusCode());
+                .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
+                    throw new ExternalServiceException("Alpha Vantage server error: HTTP " + res.getStatusCode(), true);
                 })
-                .body(String.class);
+                .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
+                    boolean retryable = res.getStatusCode().value() == 429;
+                    throw new ExternalServiceException("Alpha Vantage client error: HTTP " + res.getStatusCode(), retryable);
+                })
+                .body(String.class));
 
         try {
             JsonNode root = objectMapper.readTree(body);
@@ -107,6 +151,49 @@ public class AlphaVantageClient {
             return new KeyValidationResult(KeyValidationStatus.INVALID, "Unexpected Alpha Vantage response");
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse Alpha Vantage JSON: " + e.getMessage(), e);
+        }
+    }
+
+    private <T> T executeWithResilience(Supplier<T> call) {
+        return circuitBreaker.execute(() -> retryWithBackoff(call));
+    }
+
+    private <T> T retryWithBackoff(Supplier<T> call) {
+        int maxAttempts = Math.max(1, externalApiProperties.getRetry().getMaxAttempts());
+        Duration backoff = externalApiProperties.getRetry().getBackoff();
+        if (backoff == null) {
+            backoff = Duration.ZERO;
+        }
+        RuntimeException last = null;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                return call.get();
+            } catch (RuntimeException ex) {
+                last = ex;
+                if (!isRetryable(ex) || attempt == maxAttempts) {
+                    throw ex;
+                }
+                sleep(backoff.multipliedBy(attempt));
+            }
+        }
+        throw last == null ? new ExternalServiceException("Alpha Vantage call failed", true) : last;
+    }
+
+    private boolean isRetryable(RuntimeException ex) {
+        if (ex instanceof ExternalServiceException serviceEx) {
+            return serviceEx.isRetryable();
+        }
+        return ex instanceof RestClientException;
+    }
+
+    private void sleep(Duration duration) {
+        if (duration == null || duration.isZero() || duration.isNegative()) {
+            return;
+        }
+        try {
+            Thread.sleep(duration.toMillis());
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
         }
     }
 }

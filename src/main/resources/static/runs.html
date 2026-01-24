@@ -109,6 +109,34 @@
       <div id="timeline" style="display:grid; gap:12px; margin-top:12px;"></div>
       <div id="table"></div>
     </section>
+
+    <section class="card">
+      <h2 style="margin-top:0;">Quarantine review</h2>
+      <p class="status">Inspect rows quarantined during ingestion.</p>
+      <div style="display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); align-items:end;">
+        <div>
+          <label for="q-symbol" style="display:block;margin-bottom:6px;color:var(--muted);font-size:13px;font-weight:600;">Symbol</label>
+          <input id="q-symbol" placeholder="e.g. MSFT" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);">
+        </div>
+        <div>
+          <label for="q-from" style="display:block;margin-bottom:6px;color:var(--muted);font-size:13px;font-weight:600;">From</label>
+          <input id="q-from" placeholder="YYYY-MM-DD" value="2026-01-01" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);">
+        </div>
+        <div>
+          <label for="q-to" style="display:block;margin-bottom:6px;color:var(--muted);font-size:13px;font-weight:600;">To</label>
+          <input id="q-to" placeholder="YYYY-MM-DD" value="2026-12-31" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);">
+        </div>
+        <div>
+          <label for="q-limit" style="display:block;margin-bottom:6px;color:var(--muted);font-size:13px;font-weight:600;">Limit</label>
+          <input id="q-limit" placeholder="200" value="200" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);">
+        </div>
+        <div>
+          <button id="q-load" class="button secondary">Load quarantine</button>
+        </div>
+      </div>
+      <div class="status" id="q-status"></div>
+      <div id="q-table"></div>
+    </section>
   </main>
 
   <script>
@@ -118,6 +146,13 @@
     const statusEl = document.getElementById('status');
     const tableEl = document.getElementById('table');
     const timelineEl = document.getElementById('timeline');
+    const qSymbol = document.getElementById('q-symbol');
+    const qFrom = document.getElementById('q-from');
+    const qTo = document.getElementById('q-to');
+    const qLimit = document.getElementById('q-limit');
+    const qLoad = document.getElementById('q-load');
+    const qStatus = document.getElementById('q-status');
+    const qTable = document.getElementById('q-table');
 
     let accessKey = localStorage.getItem('marketlens_api_key') || '';
     const api = (path, opts = {}) => fetch(path, {
@@ -131,6 +166,11 @@
     const setStatus = (msg, isError=false) => {
       statusEl.textContent = msg || '';
       statusEl.className = 'status' + (isError ? ' error' : '');
+    };
+
+    const setQuarantineStatus = (msg, isError=false) => {
+      qStatus.textContent = msg || '';
+      qStatus.className = 'status' + (isError ? ' error' : '');
     };
 
     const promptKey = () => {
@@ -258,6 +298,64 @@
 
     refreshBtn.addEventListener('click', loadRuns);
     loadRuns();
+
+    async function loadQuarantine() {
+      if (!accessKey && !promptKey()) return;
+      setQuarantineStatus('Loading quarantine...');
+      try {
+        const params = new URLSearchParams();
+        if (qSymbol.value.trim()) params.set('symbol', qSymbol.value.trim().toUpperCase());
+        if (qFrom.value) params.set('from', qFrom.value);
+        if (qTo.value) params.set('to', qTo.value);
+        if (qLimit.value) params.set('limit', qLimit.value);
+        const res = await api(`/api/v1/ingestion/quarantine?${params.toString()}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!data.length) {
+          qTable.innerHTML = '<div class="status">No quarantined rows found.</div>';
+          setQuarantineStatus('Loaded.');
+          return;
+        }
+        qTable.innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Symbol</th>
+                <th>Date</th>
+                <th>Reason</th>
+                <th>Source</th>
+                <th>Run</th>
+                <th>Payload</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.map(row => `
+                <tr>
+                  <td>${row.createdAt ?? ''}</td>
+                  <td>${row.symbol ?? ''}</td>
+                  <td>${row.tradeDate ?? ''}</td>
+                  <td>${row.reason ?? ''}</td>
+                  <td>${row.source ?? ''}</td>
+                  <td>${row.runId ?? ''}</td>
+                  <td>
+                    <details>
+                      <summary>view</summary>
+                      <pre style="white-space:pre-wrap; margin:0;">${row.payload ?? ''}</pre>
+                    </details>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        setQuarantineStatus(`Loaded ${data.length} quarantined rows.`);
+      } catch (err) {
+        setQuarantineStatus(`Failed: ${err.message}`, true);
+      }
+    }
+
+    qLoad.addEventListener('click', loadQuarantine);
   </script>
 </body>
 </html>

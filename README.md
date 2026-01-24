@@ -8,13 +8,14 @@ MarketLens is a Spring Boot 4 (Java 21) market data pipeline and analytics servi
 - **Technical indicators** (RSI, MACD) and cursor-style pagination.
 - **Corporate actions** and **split-adjusted prices**.
 - **Market calendar** (NYSE trading days + holidays).
-- **Data quality reports** (missing days, duplicates, outliers).
+- **Data quality reports** (missing days, duplicates, outliers, early-close awareness).
 - **Rate limiting** and **daily quota tracking**.
 - **OpenAPI/Swagger** docs and **Prometheus** metrics.
 - **Structured JSON logging**.
 - **Caching** for calendar and adjusted prices.
 - **Distributed tracing** via OTLP.
 - **Partitioned price candles** for scale.
+- **Quarantine queue** for malformed ingestion rows.
 
 ## Tech Stack
 
@@ -40,11 +41,12 @@ MarketLens is a Spring Boot 4 (Java 21) market data pipeline and analytics servi
 
 Set the following environment variables (or update `src/main/resources/application.yml`):
 
-- `MARKETDATA_DB_URL` (default: `jdbc:postgresql://localhost:5433/marketdata`)
-- `MARKETDATA_DB_USER` (default: `marketdata`)
-- `MARKETDATA_DB_PASSWORD` (default: `marketdata`)
+- `SPRING_DATASOURCE_URL` (default: `jdbc:postgresql://localhost:5433/marketdata`)
+- `SPRING_DATASOURCE_USERNAME` (default: `marketdata`)
+- `SPRING_DATASOURCE_PASSWORD` (default: `marketdata`)
 - `MARKETDATA_ADMIN_KEY` (admin API key)
 - `MARKETDATA_USER_KEY` (user API key)
+- `ALPHAVANTAGE_API_KEY` (provider key)
 - `OTEL_EXPORTER_OTLP_ENDPOINT` (optional tracing endpoint)
 
 ### Run the app
@@ -96,7 +98,7 @@ Default local keys (update for production):
 - `change-me-user`
 - `change-me-admin`
 
-Public endpoints include `/`, `/index.html`, `/watchlist.html`, `/indicators.html`, `/swagger-ui/**`, `/v3/api-docs/**`, `/api/v1/health`, `/actuator/health/**`, `/actuator/info/**`.
+Public endpoints include `/`, `/*.html`, `/swagger-ui/**`, `/v3/api-docs/**`, `/api/v1/health`, `/actuator/health/**`, `/actuator/info/**`.
 
 ## Rate Limiting & Quotas
 
@@ -142,16 +144,22 @@ Daily quota headers are also included:
 
 ### Corporate Actions
 
-- `GET /api/v1/corporate-actions/{symbol}`
+- `GET /api/v1/corporate-actions?symbol=MSFT`
 - `POST /api/v1/corporate-actions`
 
 ### Market Calendar
 
 - `GET /api/v1/calendar/nyse?from=2025-01-01&to=2025-12-31`
+- `GET /api/v1/calendar/nyse?from=2025-01-01&to=2025-12-31&excludeEarlyCloses=true`
+- `GET /api/v1/calendar/nyse/early-closes?from=2025-01-01&to=2025-12-31`
 
 ### Data Quality
 
 - `GET /api/v1/quality/report?symbol=MSFT&from=2024-01-01&to=2024-12-31`
+
+### Quarantine
+
+- `GET /api/v1/ingestion/quarantine?symbol=MSFT&from=2024-01-01&to=2024-12-31&limit=200`
 
 ### API Key Admin
 
@@ -193,6 +201,7 @@ Recent changes include:
 - Pipeline run metadata and idempotency key
 - Corporate actions table
 - Yearly partitioning of `price_candle`
+- Ingestion quarantine table
 
 ## Observability
 
@@ -212,16 +221,23 @@ All settings live in `src/main/resources/application.yml`, including:
 - Rate limits & quotas
 - Retention settings
 - NYSE holidays
+- NYSE early closes
+- External API timeouts, retry, and circuit breaker
 - OpenAPI paths
 
 ## Development Tips
 
 - If you change migrations locally, reset your database or adjust Flyway history.
 - Use the UI “Set API Key” action to validate and save a provider API key.
+- The Runs page includes a quarantine browser to review malformed rows.
 
 ## CI
 
 - GitHub Actions workflow in [.github/workflows/ci.yml](.github/workflows/ci.yml)
+
+## Testing
+
+- Integration tests use Testcontainers. You need Docker running locally for `./mvnw test`.
 
 ## License
 

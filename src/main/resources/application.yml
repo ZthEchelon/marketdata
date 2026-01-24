@@ -16,6 +16,16 @@ marketdata:
     capacity: 60
     refill-tokens: 60
     refill-period: 60s
+  external:
+    connect-timeout: 3s
+    read-timeout: 12s
+    retry:
+      max-attempts: 3
+      backoff: 300ms
+    circuit-breaker:
+      failure-threshold: 5
+      open-state-duration: 30s
+      half-open-max-calls: 2
   retention:
     price-candle-days: 3650
   calendar:
@@ -29,6 +39,9 @@ marketdata:
       - 2026-09-07
       - 2026-11-26
       - 2026-12-25
+    nyse-early-closes:
+      - 2026-11-27
+      - 2026-12-24
 
 spring:
   datasource:

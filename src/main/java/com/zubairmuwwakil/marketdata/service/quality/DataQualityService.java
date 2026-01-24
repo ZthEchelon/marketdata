@@ -23,7 +23,8 @@ public class DataQualityService {
             int missingDays,
             List<LocalDate> missingDates,
             long duplicateCount,
-            long outlierCount
+            long outlierCount,
+            List<LocalDate> earlyCloseDates
     ) {}
 
     private final PriceCandleRepository candleRepository;
@@ -39,7 +40,8 @@ public class DataQualityService {
     }
 
     public QualityReport report(String symbol, LocalDate from, LocalDate to) {
-        List<LocalDate> tradingDays = calendarService.tradingDaysBetween(from, to);
+        List<LocalDate> tradingDays = calendarService.tradingDaysBetween(from, to, false);
+        List<LocalDate> earlyCloses = calendarService.earlyClosesBetween(from, to);
         List<PriceCandle> candles = candleRepository.findBySymbolAndTradeDateBetweenOrderByTradeDateAsc(symbol, from, to);
         Set<LocalDate> storedDates = new HashSet<>();
         for (PriceCandle candle : candles) {
@@ -75,7 +77,8 @@ public class DataQualityService {
                 missing.size(),
                 missing,
                 duplicateCount == null ? 0 : duplicateCount,
-                outlierCount == null ? 0 : outlierCount
+                outlierCount == null ? 0 : outlierCount,
+                earlyCloses
         );
     }
 }

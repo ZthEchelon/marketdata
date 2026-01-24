@@ -4,10 +4,12 @@ import com.zubairmuwwakil.marketdata.model.dto.DailyCandle;
 import com.zubairmuwwakil.marketdata.model.entity.PipelineRun;
 import com.zubairmuwwakil.marketdata.model.entity.PipelineRunType;
 import com.zubairmuwwakil.marketdata.model.entity.PipelineStatus;
+import com.zubairmuwwakil.marketdata.repository.IngestionQuarantineRepository;
 import com.zubairmuwwakil.marketdata.repository.PipelineRunRepository;
 import com.zubairmuwwakil.marketdata.repository.PriceCandleUpsertRepository;
 import com.zubairmuwwakil.marketdata.repository.WatchlistSymbolRepository;
 import com.zubairmuwwakil.marketdata.service.indicator.IndicatorCalculationService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,8 @@ public class IngestionService {
     private final PriceCandleUpsertRepository candleUpsertRepo;
     private final PipelineRunRepository runRepo;
     private final IndicatorCalculationService indicatorService;
+    private final IngestionQuarantineRepository quarantineRepository;
+    private final ObjectMapper objectMapper;
 
     public IngestionService(
             MarketDataProvider marketDataProvider,
@@ -34,7 +38,9 @@ public class IngestionService {
             QuotaService quotaService,
             PriceCandleUpsertRepository candleUpsertRepo,
             PipelineRunRepository runRepo,
-            IndicatorCalculationService indicatorService
+            IndicatorCalculationService indicatorService,
+            IngestionQuarantineRepository quarantineRepository,
+            ObjectMapper objectMapper
     ) {
         this.marketDataProvider = marketDataProvider;
         this.watchlistRepo = watchlistRepo;
@@ -42,6 +48,8 @@ public class IngestionService {
         this.candleUpsertRepo = candleUpsertRepo;
         this.runRepo = runRepo;
         this.indicatorService = indicatorService;
+        this.quarantineRepository = quarantineRepository;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -100,7 +108,7 @@ public class IngestionService {
 
         for (String symbol : symbolsToProcess) {
             try {
-                ProcessOutcome outcome = processSymbolWithRetry(symbol, from, to);
+                ProcessOutcome outcome = processSymbolWithRetry(symbol, from, to, run.getId());
                 processed++;
                 retriesUsed += outcome.retriesUsed();
             } catch (IllegalStateException quotaEx) {
@@ -175,7 +183,7 @@ public class IngestionService {
 
         for (String symbol : symbolsToProcess) {
             try {
-                ProcessOutcome outcome = processSymbolWithRetry(symbol, from, to);
+                ProcessOutcome outcome = processSymbolWithRetry(symbol, from, to, run.getId());
                 retriesUsed += outcome.retriesUsed();
                 processed++;
             } catch (IllegalStateException quotaEx) {
@@ -215,15 +223,18 @@ public class IngestionService {
      * @return true if any candles were inserted and indicators recalculated.
      */
     @Transactional
-    protected ProcessOutcome processSymbolWithRetry(String symbol, LocalDate from, LocalDate to) {
+    protected ProcessOutcome processSymbolWithRetry(String symbol, LocalDate from, LocalDate to, Long runId) {
         int attempts = 0;
         RuntimeException last = null;
         while (attempts < 3) {
             try {
-                processSymbol(symbol, from, to);
+                processSymbol(symbol, from, to, runId);
                 return new ProcessOutcome(true, attempts);
             } catch (RuntimeException ex) {
                 last = ex;
+                if (!isRetryableProcessException(ex) || attempts >= 2) {
+                    throw ex;
+                }
                 attempts++;
                 try {
                     Thread.sleep(250L * attempts);
@@ -237,15 +248,23 @@ public class IngestionService {
     }
 
     @Transactional
-    protected ProcessOutcome processSymbol(String symbol, LocalDate from, LocalDate to) {
+    protected ProcessOutcome processSymbol(String symbol, LocalDate from, LocalDate to, Long runId) {
         quotaService.consumeOneCall();
 
-        List<DailyCandle> candles =
-                marketDataProvider.fetchDailyCandles(symbol, from, to);
+        List<DailyCandle> candles = marketDataProvider.fetchDailyCandles(symbol, from, to);
+        List<DailyCandle> valid = new java.util.ArrayList<>();
+        for (DailyCandle candle : candles) {
+            String reason = validateCandle(candle);
+            if (reason != null) {
+                quarantineRepository.save(symbol, candle == null ? null : candle.tradeDate(), reason, payloadFor(candle), marketDataProvider.sourceName(), runId);
+                continue;
+            }
+            valid.add(candle);
+        }
 
         candleUpsertRepo.upsertAll(
             symbol,
-            candles,
+            valid,
             false,
             marketDataProvider.sourceName()
         );
@@ -260,5 +279,48 @@ public class IngestionService {
             return Optional.empty();
         }
         return runRepo.findByIdempotencyKey(idempotencyKey);
+    }
+
+    private String validateCandle(DailyCandle candle) {
+        if (candle == null) {
+            return "null_row";
+        }
+        if (candle.tradeDate() == null) {
+            return "missing_trade_date";
+        }
+        if (candle.open() == null || candle.high() == null || candle.low() == null || candle.close() == null) {
+            return "missing_price";
+        }
+        if (candle.volume() < 0) {
+            return "negative_volume";
+        }
+        if (candle.low().compareTo(candle.high()) > 0) {
+            return "invalid_price_order";
+        }
+        if (candle.open().signum() <= 0 || candle.high().signum() <= 0 || candle.low().signum() <= 0 || candle.close().signum() <= 0) {
+            return "non_positive_price";
+        }
+        return null;
+    }
+
+    private String payloadFor(DailyCandle candle) {
+        try {
+            return objectMapper.writeValueAsString(candle);
+        } catch (Exception ex) {
+            return "{\"error\":\"payload_serialization_failed\"}";
+        }
+    }
+
+    private boolean isRetryableProcessException(RuntimeException ex) {
+        if (ex instanceof com.zubairmuwwakil.marketdata.client.ExternalServiceException serviceEx) {
+            return serviceEx.isRetryable();
+        }
+        if (ex instanceof com.zubairmuwwakil.marketdata.resilience.CircuitBreakerOpenException) {
+            return false;
+        }
+        if (ex instanceof IllegalStateException) {
+            return false;
+        }
+        return true;
     }
 }

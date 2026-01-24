@@ -22,8 +22,17 @@ public class CalendarController {
     @GetMapping("/nyse")
     public List<LocalDate> tradingDays(
             @RequestParam LocalDate from,
+            @RequestParam LocalDate to,
+            @RequestParam(name = "excludeEarlyCloses", defaultValue = "false") boolean excludeEarlyCloses
+    ) {
+        return calendarService.tradingDaysBetween(from, to, !excludeEarlyCloses);
+    }
+
+    @GetMapping("/nyse/early-closes")
+    public List<LocalDate> earlyCloses(
+            @RequestParam LocalDate from,
             @RequestParam LocalDate to
     ) {
-        return calendarService.tradingDaysBetween(from, to);
+        return calendarService.earlyClosesBetween(from, to);
     }
 }

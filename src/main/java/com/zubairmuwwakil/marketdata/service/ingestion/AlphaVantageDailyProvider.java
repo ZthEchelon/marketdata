@@ -3,6 +3,7 @@ package com.zubairmuwwakil.marketdata.service.ingestion;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.zubairmuwwakil.marketdata.client.AlphaVantageClient;
 import com.zubairmuwwakil.marketdata.model.dto.DailyCandle;
+import com.zubairmuwwakil.marketdata.repository.IngestionQuarantineRepository;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
@@ -15,21 +16,17 @@ import java.util.*;
 public class AlphaVantageDailyProvider implements MarketDataProvider {
 
     private final AlphaVantageClient client;
+    private final IngestionQuarantineRepository quarantineRepository;
 
-    public AlphaVantageDailyProvider(AlphaVantageClient client) {
+    public AlphaVantageDailyProvider(AlphaVantageClient client,
+                                     IngestionQuarantineRepository quarantineRepository) {
         this.client = client;
+        this.quarantineRepository = quarantineRepository;
     }
 
     @Override
     public List<DailyCandle> fetchDailyCandles(String symbol, LocalDate from, LocalDate to) {
         JsonNode root = client.timeSeriesDaily(symbol);
-
-        if (root.has("Error Message")) {
-            throw new RuntimeException(root.get("Error Message").asText());
-        }
-        if (root.has("Note")) {
-            throw new RuntimeException("Alpha Vantage throttled request: " + root.get("Note").asText());
-        }
 
         JsonNode series = root.get("Time Series (Daily)");
         if (series == null) {
@@ -41,7 +38,14 @@ public class AlphaVantageDailyProvider implements MarketDataProvider {
         Iterator<Map.Entry<String, JsonNode>> it = series.properties().iterator();
         while (it.hasNext()) {
             var entry = it.next();
-            LocalDate date = LocalDate.parse(entry.getKey());
+            LocalDate date;
+            try {
+                date = LocalDate.parse(entry.getKey());
+            } catch (Exception ex) {
+                JsonNode payload = entry.getValue();
+                quarantineRepository.save(symbol, null, "parse_error:date", payload == null ? "{}" : payload.toString(), sourceName(), null);
+                continue;
+            }
 
             if (date.isBefore(from) || date.isAfter(to)) continue;
 
@@ -53,16 +57,21 @@ public class AlphaVantageDailyProvider implements MarketDataProvider {
                     v.get("4. close") == null ||
                     v.get("5. volume") == null ||
                     v.get("4. close").isNull()) {
-                continue; // skip malformed rows
+                quarantineRepository.save(symbol, date, "missing_fields", v == null ? "{}" : v.toString(), sourceName(), null);
+                continue;
             }
-            out.add(new DailyCandle(
-                    date,
-                    new BigDecimal(v.get("1. open").asText()),
-                    new BigDecimal(v.get("2. high").asText()),
-                    new BigDecimal(v.get("3. low").asText()),
-                    new BigDecimal(v.get("4. close").asText()),
-                    v.get("5. volume").asLong()
-            ));
+            try {
+                out.add(new DailyCandle(
+                        date,
+                        new BigDecimal(v.get("1. open").asText()),
+                        new BigDecimal(v.get("2. high").asText()),
+                        new BigDecimal(v.get("3. low").asText()),
+                        new BigDecimal(v.get("4. close").asText()),
+                        v.get("5. volume").asLong()
+                ));
+            } catch (Exception ex) {
+                quarantineRepository.save(symbol, date, "parse_error:values", v.toString(), sourceName(), null);
+            }
         }
 
         out.sort(Comparator.comparing(DailyCandle::tradeDate));

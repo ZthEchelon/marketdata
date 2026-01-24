@@ -73,6 +73,7 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
 
     private boolean isPublicPath(String path) {
         return pathMatcher.match("/", path)
+                || pathMatcher.match("/**/*.html", path)
                 || pathMatcher.match("/index.html", path)
                 || pathMatcher.match("/watchlist.html", path)
                 || pathMatcher.match("/indicators.html", path)
