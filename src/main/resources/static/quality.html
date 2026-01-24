@@ -55,6 +55,7 @@
         </div>
       </div>
       <div class="status" id="status"></div>
+      <div id="summary" style="display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));"></div>
       <pre id="output"></pre>
     </section>
   </main>
@@ -64,6 +65,7 @@
     const runBtn = document.getElementById('run-btn');
     const statusEl = document.getElementById('status');
     const output = document.getElementById('output');
+    const summary = document.getElementById('summary');
     const symbol = document.getElementById('symbol');
     const from = document.getElementById('from');
     const to = document.getElementById('to');
@@ -105,7 +107,19 @@
         const res = await api(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        output.textContent = JSON.stringify(data, null, 2);
+        summary.innerHTML = `
+          <div class="card"><strong>Expected</strong><div>${data.expectedTradingDays}</div></div>
+          <div class="card"><strong>Stored</strong><div>${data.storedDays}</div></div>
+          <div class="card"><strong>Missing</strong><div>${data.missingDays}</div></div>
+          <div class="card"><strong>Duplicates</strong><div>${data.duplicateCount}</div></div>
+          <div class="card"><strong>Outliers</strong><div>${data.outlierCount}</div></div>
+        `;
+        output.textContent = JSON.stringify({
+          symbol: data.symbol,
+          from: data.from,
+          to: data.to,
+          missingDates: data.missingDates
+        }, null, 2);
         setStatus('Report ready.');
       } catch (err) {
         setStatus(`Failed: ${err.message}`, true);

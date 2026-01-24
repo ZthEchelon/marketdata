@@ -19,6 +19,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    ApiKeyService apiKeyService,
+                                                   com.zubairmuwwakil.marketdata.security.AppKeyQuotaService appKeyQuotaService,
                                                    RateLimitProperties rateLimitProperties,
                                                    QuotaService quotaService) throws Exception {
         http
@@ -41,7 +42,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/**").hasAnyRole("ADMIN", "USER")
                         .anyRequest().permitAll()
                 )
-                .addFilterBefore(new ApiKeyAuthFilter(apiKeyService), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new ApiKeyAuthFilter(apiKeyService, appKeyQuotaService), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(new RateLimitFilter(rateLimitProperties, quotaService), ApiKeyAuthFilter.class);
 
         return http.build();

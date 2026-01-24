@@ -51,6 +51,7 @@
         </div>
       </div>
       <div class="status" id="status"></div>
+      <div id="grid" style="display:grid; gap:8px; grid-template-columns:repeat(7,minmax(80px,1fr));"></div>
       <div id="table"></div>
     </section>
   </main>
@@ -60,6 +61,7 @@
     const loadBtn = document.getElementById('load-btn');
     const statusEl = document.getElementById('status');
     const tableEl = document.getElementById('table');
+    const gridEl = document.getElementById('grid');
     const from = document.getElementById('from');
     const to = document.getElementById('to');
 
@@ -95,14 +97,33 @@
         const res = await api(`/api/v1/calendar/nyse?from=${encodeURIComponent(from.value)}&to=${encodeURIComponent(to.value)}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        tableEl.innerHTML = data.length ? `
+        if (!data.length) {
+          tableEl.innerHTML = '<div class="status">No trading days found.</div>';
+          gridEl.innerHTML = '';
+          return;
+        }
+        const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+        const dates = data.map(d => new Date(d + 'T00:00:00'));
+        const first = dates[0];
+        const startOffset = (first.getDay() + 6) % 7; // Monday start
+        const last = dates[dates.length - 1];
+        const totalCells = startOffset + last.getDate();
+        gridEl.innerHTML = days.map(d => `<div class="status" style="font-weight:700;">${d}</div>`).join('') +
+          Array.from({length: startOffset}, () => '<div></div>').join('') +
+          Array.from({length: last.getDate()}, (_,i) => {
+            const day = i + 1;
+            const iso = `${last.getFullYear()}-${String(last.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+            const isTrading = data.includes(iso);
+            return `<div style="padding:10px; border-radius:12px; border:1px solid var(--border); background:${isTrading ? 'rgba(20,184,166,0.12)' : '#fff'}; font-weight:600; text-align:center;">${day}</div>`;
+          }).join('');
+        tableEl.innerHTML = `
           <table>
             <thead><tr><th>Trading Day</th></tr></thead>
             <tbody>
               ${data.map(d => `<tr><td>${d}</td></tr>`).join('')}
             </tbody>
           </table>
-        ` : '<div class="status">No trading days found.</div>';
+        `;
         setStatus('Loaded.');
       } catch (err) {
         setStatus(`Failed: ${err.message}`, true);

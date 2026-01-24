@@ -68,6 +68,24 @@ public class IngestionRunController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PostMapping("/runs/{id}/retry")
+    public ResponseEntity<PipelineRun> retry(@PathVariable Long id, Authentication authentication) {
+        var opt = runRepository.findById(id);
+        if (opt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        PipelineRun run = opt.get();
+        if (run.getRunType() == com.zubairmuwwakil.marketdata.model.entity.PipelineRunType.BACKFILL) {
+            if (run.getRequestedFrom() == null || run.getRequestedTo() == null) {
+                return ResponseEntity.badRequest().build();
+            }
+            return ResponseEntity.ok(
+                    ingestionService.ingestBackfill(null, run.getRequestedFrom(), run.getRequestedTo(), null, startedBy(authentication))
+            );
+        }
+        return ResponseEntity.ok(ingestionService.ingestDaily(null, startedBy(authentication)));
+    }
+
     private String startedBy(Authentication authentication) {
         if (authentication == null || authentication.getName() == null) {
             return "api";

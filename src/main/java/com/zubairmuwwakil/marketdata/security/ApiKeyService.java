@@ -1,6 +1,5 @@
 package com.zubairmuwwakil.marketdata.security;
 
-import com.zubairmuwwakil.marketdata.config.ApiKeyProperties;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -8,14 +7,14 @@ import java.util.Optional;
 @Service
 public class ApiKeyService {
 
-    private final ApiKeyProperties properties;
+    private final ApiKeyRegistry registry;
 
-    public ApiKeyService(ApiKeyProperties properties) {
-        this.properties = properties;
+    public ApiKeyService(ApiKeyRegistry registry) {
+        this.registry = registry;
     }
 
     public Optional<ApiKeyPrincipal> authenticate(String apiKey) {
-        return properties.findByKey(apiKey)
+        return registry.findByKey(apiKey)
                 .map(entry -> new ApiKeyPrincipal(apiKey, entry.role()));
     }
 }

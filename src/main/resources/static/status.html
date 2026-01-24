@@ -45,6 +45,11 @@
     </section>
 
     <section class="card">
+      <h3>Latest run</h3>
+      <div class="status" id="latest-run"></div>
+    </section>
+
+    <section class="card">
       <h3>Quota</h3>
       <div class="status" id="quota"></div>
       <button id="quota-btn" class="button secondary">Refresh quota</button>
@@ -58,6 +63,7 @@
     const statusEl = document.getElementById('status');
     const healthPill = document.getElementById('health-pill');
     const quotaEl = document.getElementById('quota');
+    const latestRunEl = document.getElementById('latest-run');
 
     let accessKey = localStorage.getItem('marketlens_api_key') || '';
     const api = (path, opts = {}) => fetch(path, {
@@ -97,6 +103,17 @@
       }
     }
 
+    async function refreshLatestRun() {
+      try {
+        const res = await api('/api/v1/ingestion/runs/latest');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const run = await res.json();
+        latestRunEl.textContent = `Run ${run.id} • ${run.runType} • ${run.status} • ${run.symbolsProcessed}/${run.symbolsExpected}`;
+      } catch {
+        latestRunEl.textContent = 'No runs available.';
+      }
+    }
+
     async function refreshQuota() {
       if (!accessKey && !promptKey()) return;
       quotaEl.textContent = 'Loading quota...';
@@ -113,11 +130,13 @@
     refreshBtn.addEventListener('click', async () => {
       setStatus('Refreshing...');
       await refreshHealth();
+      await refreshLatestRun();
       setStatus('');
     });
     quotaBtn.addEventListener('click', refreshQuota);
 
     refreshHealth();
+    refreshLatestRun();
   </script>
 </body>
 </html>

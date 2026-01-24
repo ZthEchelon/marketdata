@@ -61,6 +61,18 @@
       <div class="status" id="quota"></div>
       <button id="refresh-quota" class="button secondary">Refresh quota</button>
     </section>
+
+    <section class="card">
+      <h3>Keys (admin)</h3>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button id="gen-key" class="button">Generate key</button>
+        <input id="new-role" placeholder="Role (ADMIN/USER)" style="max-width:200px;">
+        <input id="new-label" placeholder="Label" style="max-width:240px;">
+        <input id="new-limit" placeholder="Daily limit" style="max-width:160px;">
+      </div>
+      <div class="status" id="admin-status"></div>
+      <div id="keys-table"></div>
+    </section>
   </main>
 
   <script>
@@ -72,6 +84,12 @@
     const statusEl = document.getElementById('status');
     const quotaEl = document.getElementById('quota');
     const refreshQuota = document.getElementById('refresh-quota');
+    const keysTable = document.getElementById('keys-table');
+    const genKeyBtn = document.getElementById('gen-key');
+    const newRole = document.getElementById('new-role');
+    const newLabel = document.getElementById('new-label');
+    const newLimit = document.getElementById('new-limit');
+    const adminStatus = document.getElementById('admin-status');
 
     let accessKey = localStorage.getItem('marketlens_api_key') || '';
     marketlensKeyInput.value = accessKey;
@@ -142,6 +160,86 @@
         quotaEl.textContent = `Failed: ${err.message}`;
       }
     });
+
+    async function loadKeys() {
+      if (!accessKey && !promptKey()) return;
+      adminStatus.textContent = 'Loading keys...';
+      try {
+        const res = await api('/api/v1/admin/keys');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        keysTable.innerHTML = `
+          <table>
+            <thead><tr><th>ID</th><th>Prefix</th><th>Role</th><th>Source</th><th>Used</th><th>Limit</th><th>Remaining</th><th>Actions</th></tr></thead>
+            <tbody>
+              ${data.map(k => `
+                <tr>
+                  <td>${k.keyId}</td>
+                  <td>${k.keyPrefix}</td>
+                  <td>${k.role}</td>
+                  <td>${k.source}</td>
+                  <td>${k.used}</td>
+                  <td>${k.limit}</td>
+                  <td>${k.remaining}</td>
+                  <td>
+                    ${k.mutable ? `<button class="button secondary" data-rotate="${k.keyId}">Rotate</button>
+                    <button class="button secondary" data-delete="${k.keyId}">Delete</button>` : '<span class="status">Config</span>'}
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        adminStatus.textContent = '';
+      } catch (err) {
+        adminStatus.textContent = `Failed: ${err.message}`;
+      }
+    }
+
+    genKeyBtn.addEventListener('click', async () => {
+      if (!accessKey && !promptKey()) return;
+      adminStatus.textContent = 'Generating key...';
+      try {
+        const res = await api('/api/v1/admin/keys', {
+          method: 'POST',
+          body: JSON.stringify({
+            role: newRole.value || 'USER',
+            label: newLabel.value || 'generated',
+            limit: newLimit.value ? Number(newLimit.value) : null
+          })
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        adminStatus.textContent = `New key: ${data.key} (save this now)`;
+        await loadKeys();
+      } catch (err) {
+        adminStatus.textContent = `Failed: ${err.message}`;
+      }
+    });
+
+    keysTable.addEventListener('click', async (e) => {
+      const rotateId = e.target.getAttribute('data-rotate');
+      const deleteId = e.target.getAttribute('data-delete');
+      if (!rotateId && !deleteId) return;
+      if (!accessKey && !promptKey()) return;
+      try {
+        if (rotateId) {
+          const res = await api(`/api/v1/admin/keys/${rotateId}/rotate`, { method: 'POST' });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          adminStatus.textContent = `Rotated key: ${data.key} (save this now)`;
+        } else if (deleteId) {
+          const res = await api(`/api/v1/admin/keys/${deleteId}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          adminStatus.textContent = 'Key deleted.';
+        }
+        await loadKeys();
+      } catch (err) {
+        adminStatus.textContent = `Failed: ${err.message}`;
+      }
+    });
+
+    loadKeys();
   </script>
 </body>
 </html>

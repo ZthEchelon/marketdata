@@ -106,6 +106,7 @@
         <button id="backfill-btn" class="button secondary">Trigger backfill</button>
       </div>
       <div class="status" id="status"></div>
+      <div id="timeline" style="display:grid; gap:12px; margin-top:12px;"></div>
       <div id="table"></div>
     </section>
   </main>
@@ -116,6 +117,7 @@
     const backfillBtn = document.getElementById('backfill-btn');
     const statusEl = document.getElementById('status');
     const tableEl = document.getElementById('table');
+    const timelineEl = document.getElementById('timeline');
 
     let accessKey = localStorage.getItem('marketlens_api_key') || '';
     const api = (path, opts = {}) => fetch(path, {
@@ -149,6 +151,7 @@
         const res = await api('/api/v1/ingestion/runs');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
+        renderTimeline(data);
         renderTable(data);
         setStatus(`Loaded ${data.length} runs.`);
       } catch (err) {
@@ -191,6 +194,27 @@
       `;
     }
 
+    function renderTimeline(rows) {
+      if (!rows.length) {
+        timelineEl.innerHTML = '';
+        return;
+      }
+      timelineEl.innerHTML = rows.map(r => `
+        <div class="card" style="padding:14px; display:grid; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong>Run #${r.id}</strong>
+            <span class="status">${r.status}</span>
+          </div>
+          <div class="status">${r.runType} • ${r.runDate} • ${r.symbolsProcessed}/${r.symbolsExpected} processed</div>
+          <div class="status">Retries: ${r.retryCount ?? 0} • Failed: ${r.symbolsFailed ?? 0}</div>
+          ${r.errorMessage ? `<div class="status error">${r.errorMessage}</div>` : ''}
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="button secondary" data-retry="${r.id}">Retry run</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
     backfillBtn.addEventListener('click', async () => {
       if (!accessKey && !promptKey()) return;
       const symbols = prompt('Symbols (comma separated) or leave blank for watchlist', '');
@@ -210,6 +234,22 @@
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         setStatus(`Backfill started: run ${data.id}.`);
+        await loadRuns();
+      } catch (err) {
+        setStatus(`Failed: ${err.message}`, true);
+      }
+    });
+
+    timelineEl.addEventListener('click', async (e) => {
+      const id = e.target.getAttribute('data-retry');
+      if (!id) return;
+      if (!accessKey && !promptKey()) return;
+      setStatus(`Retrying run ${id}...`);
+      try {
+        const res = await api(`/api/v1/ingestion/runs/${id}/retry`, { method: 'POST' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setStatus(`Retry started: run ${data.id}.`);
         await loadRuns();
       } catch (err) {
         setStatus(`Failed: ${err.message}`, true);

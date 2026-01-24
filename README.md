@@ -156,6 +156,10 @@ Daily quota headers are also included:
 ### API Key Admin
 
 - `POST /api/v1/admin/api-key`
+- `GET /api/v1/admin/keys`
+- `POST /api/v1/admin/keys`
+- `POST /api/v1/admin/keys/{keyId}/rotate`
+- `DELETE /api/v1/admin/keys/{keyId}`
 
 ## Example Requests
 

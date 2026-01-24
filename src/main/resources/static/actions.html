@@ -54,6 +54,27 @@
           <button id="load-btn" class="button">Load</button>
         </div>
       </div>
+      <div style="display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); align-items:end; margin-top:16px;">
+        <div>
+          <label for="action-date">Action date</label>
+          <input id="action-date" placeholder="YYYY-MM-DD">
+        </div>
+        <div>
+          <label for="action-type">Type</label>
+          <input id="action-type" placeholder="SPLIT or DIVIDEND">
+        </div>
+        <div>
+          <label for="split-factor">Split factor</label>
+          <input id="split-factor" placeholder="e.g. 2.0">
+        </div>
+        <div>
+          <label for="dividend">Dividend</label>
+          <input id="dividend" placeholder="e.g. 0.50">
+        </div>
+        <div>
+          <button id="add-action" class="button secondary">Add action</button>
+        </div>
+      </div>
       <div class="status" id="status"></div>
       <div id="actions"></div>
       <div id="adjusted"></div>
@@ -69,6 +90,11 @@
     const symbol = document.getElementById('symbol');
     const from = document.getElementById('from');
     const to = document.getElementById('to');
+    const actionDate = document.getElementById('action-date');
+    const actionType = document.getElementById('action-type');
+    const splitFactor = document.getElementById('split-factor');
+    const dividend = document.getElementById('dividend');
+    const addActionBtn = document.getElementById('add-action');
 
     let accessKey = localStorage.getItem('marketlens_api_key') || '';
     const api = (path, opts = {}) => fetch(path, {
@@ -104,7 +130,7 @@
       setStatus('Loading data...');
       try {
         const sym = symbol.value.trim().toUpperCase();
-        const actionsRes = await api(`/api/v1/corporate-actions/${encodeURIComponent(sym)}`);
+        const actionsRes = await api(`/api/v1/corporate-actions?symbol=${encodeURIComponent(sym)}`);
         const adjustedRes = await api(`/api/v1/market/adjusted?symbol=${encodeURIComponent(sym)}&from=${encodeURIComponent(from.value)}&to=${encodeURIComponent(to.value)}`);
         if (!actionsRes.ok) throw new Error(`Actions HTTP ${actionsRes.status}`);
         if (!adjustedRes.ok) throw new Error(`Adjusted HTTP ${adjustedRes.status}`);
@@ -143,6 +169,33 @@
           </table>
         ` : '<div class="status">No adjusted prices found.</div>';
         setStatus('Loaded.');
+      } catch (err) {
+        setStatus(`Failed: ${err.message}`, true);
+      }
+    });
+
+    addActionBtn.addEventListener('click', async () => {
+      if (!accessKey && !promptKey()) return;
+      const sym = symbol.value.trim().toUpperCase();
+      if (!sym || !actionDate.value || !actionType.value) {
+        return setStatus('Enter symbol, date, and type.', true);
+      }
+      setStatus('Saving corporate action...');
+      try {
+        const body = {
+          symbol: sym,
+          actionDate: actionDate.value,
+          actionType: actionType.value.trim().toUpperCase(),
+          splitFactor: splitFactor.value ? Number(splitFactor.value) : null,
+          dividend: dividend.value ? Number(dividend.value) : null
+        };
+        const res = await api('/api/v1/corporate-actions', {
+          method: 'POST',
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        setStatus('Action saved.');
+        loadBtn.click();
       } catch (err) {
         setStatus(`Failed: ${err.message}`, true);
       }

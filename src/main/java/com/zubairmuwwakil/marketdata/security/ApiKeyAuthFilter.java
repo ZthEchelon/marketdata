@@ -23,10 +23,12 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
     public static final String API_KEY_HEADER = "X-API-Key";
 
     private final ApiKeyService apiKeyService;
+    private final AppKeyQuotaService quotaService;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
-    public ApiKeyAuthFilter(ApiKeyService apiKeyService) {
+    public ApiKeyAuthFilter(ApiKeyService apiKeyService, AppKeyQuotaService quotaService) {
         this.apiKeyService = apiKeyService;
+        this.quotaService = quotaService;
     }
 
     @Override
@@ -48,6 +50,12 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
         }
 
         ApiKeyPrincipal principal = principalOpt.get();
+        try {
+            quotaService.consume(apiKey);
+        } catch (IllegalStateException ex) {
+            respondTooManyRequests(response);
+            return;
+        }
         var auth = new UsernamePasswordAuthenticationToken(
             principal.key(),
             apiKey,
@@ -85,6 +93,13 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
         response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.getWriter().write("{\"title\":\"Unauthorized\",\"status\":401,\"detail\":\"Missing or invalid API key.\"}");
+    }
+
+    private void respondTooManyRequests(HttpServletResponse response) throws IOException {
+        response.setStatus(429);
+        response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.getWriter().write("{\"title\":\"Quota Exceeded\",\"status\":429,\"detail\":\"MarketLens API key quota exceeded.\"}");
     }
 
     private String fingerprint(String apiKey) {
