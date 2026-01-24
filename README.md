@@ -60,8 +60,14 @@ The app will start on `http://localhost:8080`.
 - `http://localhost:8080/` – MarketLens dashboard
 - `http://localhost:8080/watchlist.html`
 - `http://localhost:8080/indicators.html`
+- `http://localhost:8080/runs.html`
+- `http://localhost:8080/quality.html`
+- `http://localhost:8080/actions.html`
+- `http://localhost:8080/calendar.html`
+- `http://localhost:8080/keys.html`
+- `http://localhost:8080/status.html`
 
-> The UI prompts for your **API key** and uses the `X-API-Key` header for all API calls.
+> The UI uses the **MarketLens API key** (default `change-me-user`) and sends it as `X-API-Key` for all API calls.
 
 ## API Documentation
 
@@ -84,6 +90,11 @@ Roles are derived from the configured key list:
 
 - **ADMIN**: access to `/api/v1/admin/**` and `/actuator/prometheus`
 - **USER**: access to `/api/**`
+
+Default local keys (update for production):
+
+- `change-me-user`
+- `change-me-admin`
 
 Public endpoints include `/`, `/index.html`, `/watchlist.html`, `/indicators.html`, `/swagger-ui/**`, `/v3/api-docs/**`, `/api/v1/health`, `/actuator/health/**`, `/actuator/info/**`.
 
