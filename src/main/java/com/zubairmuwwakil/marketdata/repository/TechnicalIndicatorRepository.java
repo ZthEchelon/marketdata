@@ -3,6 +3,7 @@ package com.zubairmuwwakil.marketdata.repository;
 import com.zubairmuwwakil.marketdata.model.entity.IndicatorType;
 import com.zubairmuwwakil.marketdata.model.entity.TechnicalIndicator;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -38,5 +39,18 @@ public interface TechnicalIndicatorRepository
     );
     List<TechnicalIndicator> findAllBySymbolOrderByTradeDateAsc(
             String symbol
+    );
+
+    List<TechnicalIndicator> findAllBySymbolAndTradeDateGreaterThanOrderByTradeDateAsc(
+            String symbol,
+            LocalDate tradeDate,
+            Pageable pageable
+    );
+
+    List<TechnicalIndicator> findAllBySymbolAndIndicatorTypeAndTradeDateGreaterThanOrderByTradeDateAsc(
+            String symbol,
+            IndicatorType indicatorType,
+            LocalDate tradeDate,
+            Pageable pageable
     );
 }

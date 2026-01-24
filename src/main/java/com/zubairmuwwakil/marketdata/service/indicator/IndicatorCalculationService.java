@@ -138,6 +138,7 @@ public class IndicatorCalculationService {
        EMA helper
        ========================= */
 
+    @SuppressWarnings("unused")
     private List<BigDecimal> ema(List<BigDecimal> values, int period) {
         List<BigDecimal> ema = new ArrayList<>();
         BigDecimal multiplier =

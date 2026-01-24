@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
+@IdClass(PriceCandleId.class)
 @Table(
     name = "price_candle",
     uniqueConstraints = @UniqueConstraint(columnNames = {"symbol", "trade_date"})
@@ -20,12 +21,10 @@ import java.time.LocalDate;
 public class PriceCandle {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
     @Column(nullable = false, length = 10)
     private String symbol;
 
+    @Id
     @Column(name = "trade_date", nullable = false)
     private LocalDate tradeDate;
 
@@ -44,6 +43,7 @@ public class PriceCandle {
     @Column(nullable = false)
     private Long volume;
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean adjusted = false;
 

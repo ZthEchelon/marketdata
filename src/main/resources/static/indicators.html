@@ -9,17 +9,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0b1020;
-      --surface: #101833;
-      --surface-soft: rgba(16, 24, 51, 0.7);
-      --text: #eef2ff;
-      --muted: #a1afc8;
-      --border: rgba(148, 163, 184, 0.18);
-      --brand: #6ee7ff;
-      --brand-strong: #38bdf8;
-      --accent: #22c55e;
-      --danger: #f87171;
-      --shadow: 0 24px 80px rgba(3, 7, 18, 0.45);
+      --bg: #f4f6fb;
+      --surface: #ffffff;
+      --surface-alt: #f8fafc;
+      --text: #0b1220;
+      --muted: #5f6b85;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-strong: #1d4ed8;
+      --accent: #14b8a6;
+      --danger: #ef4444;
+      --shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
     }
     * { box-sizing: border-box; }
     body {
@@ -28,8 +28,8 @@
       color: var(--text);
       min-height: 100vh;
       background:
-        radial-gradient(1200px 500px at 10% -10%, rgba(56, 189, 248, 0.25), transparent 60%),
-        radial-gradient(900px 600px at 90% -20%, rgba(34, 197, 94, 0.18), transparent 60%),
+        radial-gradient(900px 420px at 5% -10%, rgba(37, 99, 235, 0.18), transparent 60%),
+        radial-gradient(900px 420px at 95% 0%, rgba(20, 184, 166, 0.16), transparent 60%),
         var(--bg);
     }
     header {
@@ -37,7 +37,7 @@
       top: 0;
       z-index: 10;
       backdrop-filter: blur(14px);
-      background: rgba(11, 16, 32, 0.75);
+      background: rgba(244, 246, 251, 0.92);
       border-bottom: 1px solid var(--border);
     }
     .nav {
@@ -60,13 +60,13 @@
       width: 36px;
       height: 36px;
       border-radius: 12px;
-      background: linear-gradient(135deg, #38bdf8 0%, #22c55e 100%);
+      background: linear-gradient(135deg, var(--primary), var(--accent));
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      color: #04101f;
+      color: #ffffff;
       font-weight: 800;
-      box-shadow: 0 12px 30px rgba(56, 189, 248, 0.35);
+      box-shadow: 0 12px 26px rgba(37, 99, 235, 0.22);
     }
     .nav-links {
       display: flex;
@@ -84,12 +84,12 @@
     }
     .nav-links a:hover {
       color: var(--text);
-      border-color: rgba(56, 189, 248, 0.35);
-      background: rgba(56, 189, 248, 0.12);
+      border-color: rgba(37, 99, 235, 0.25);
+      background: rgba(37, 99, 235, 0.08);
     }
     main { max-width: 1180px; margin: 0 auto; padding: 28px 24px 80px; display: grid; gap: 18px; }
     .hero {
-      background: linear-gradient(145deg, rgba(16, 24, 51, 0.95), rgba(13, 23, 45, 0.6));
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(20, 184, 166, 0.08));
       border-radius: 22px;
       border: 1px solid var(--border);
       padding: 24px;
@@ -97,16 +97,16 @@
     }
     .hero h1 { margin: 0 0 8px; font-size: clamp(24px, 2.6vw, 34px); }
     .hero p { margin: 0; color: var(--muted); line-height: 1.6; }
-    .card { background: var(--surface-soft); border: 1px solid var(--border); border-radius: 18px; padding: 20px; box-shadow: var(--shadow); }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 20px; box-shadow: var(--shadow); }
     label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 13px; font-weight: 600; }
-    select, input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.25); background: rgba(5, 10, 24, 0.7); color: var(--text); font-size: 14px; font-family: "Manrope", sans-serif; }
-    .button { border: none; border-radius: 12px; padding: 12px 16px; background: linear-gradient(135deg, var(--brand-strong), var(--accent)); color: #04101f; font-weight: 700; cursor: pointer; font-family: "Manrope", sans-serif; }
-    .button.secondary { background: rgba(15, 23, 42, 0.7); color: var(--text); border: 1px solid rgba(148, 163, 184, 0.25); }
+    select, input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: #ffffff; color: var(--text); font-size: 14px; font-family: "Manrope", sans-serif; }
+    .button { border: none; border-radius: 12px; padding: 12px 16px; background: linear-gradient(135deg, var(--primary-strong), var(--primary)); color: #ffffff; font-weight: 700; cursor: pointer; font-family: "Manrope", sans-serif; }
+    .button.secondary { background: #ffffff; color: var(--text); border: 1px solid var(--border); }
     .status { margin-top: 8px; color: var(--muted); font-size: 13px; }
     .status.error { color: var(--danger); }
-    canvas { width: 100%; height: 260px; background: rgba(5, 10, 24, 0.7); border: 1px solid rgba(148, 163, 184, 0.18); border-radius: 14px; margin-top: 12px; }
+    canvas { width: 100%; height: 260px; background: #ffffff; border: 1px solid var(--border); border-radius: 14px; margin-top: 12px; }
     table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-    th, td { padding: 8px 10px; border-bottom: 1px solid rgba(148, 163, 184, 0.15); font-family: "IBM Plex Mono", monospace; font-size: 12px; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); font-family: "IBM Plex Mono", monospace; font-size: 12px; }
     th { color: var(--muted); text-align: left; }
   </style>
 </head>
@@ -118,17 +118,20 @@
         MarketLens
       </div>
       <div class="nav-links">
-        <a href="/">Pipeline</a>
+        <a href="/">Workspace</a>
         <a href="/watchlist.html">Watchlist</a>
         <a href="/indicators.html">Indicators</a>
       </div>
-      <a class="button secondary" href="/">Back to pipeline</a>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button id="access-key-btn" class="button secondary">Set API Key</button>
+        <a class="button secondary" href="/">Back to workspace</a>
+      </div>
     </div>
   </header>
   <main>
     <section class="hero">
       <h1>Indicator visualizer</h1>
-      <p>Explore RSI and MACD trends for any stored symbol. Use this view to spot momentum shifts at a glance.</p>
+      <p>Compare RSI and MACD trends quickly. This view keeps the most recent market context close while you scan momentum.</p>
     </section>
     <div class="card">
       <div style="display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); align-items:end;">
@@ -158,15 +161,36 @@
     const rsiCanvas = document.getElementById('rsi-canvas');
     const macdCanvas = document.getElementById('macd-canvas');
     const tableWrap = document.getElementById('table-wrap');
+    const accessKeyBtn = document.getElementById('access-key-btn');
+
+    let accessKey = localStorage.getItem('marketlens_api_key') || '';
+    const api = (path, opts = {}) => fetch(path, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessKey ? { 'X-API-Key': accessKey } : {})
+      },
+      ...opts
+    });
 
     const setStatus = (msg, isError=false) => {
       statusEl.textContent = msg || '';
       statusEl.className = 'status' + (isError ? ' error' : '');
     };
 
+    accessKeyBtn.addEventListener('click', () => {
+      const next = prompt('Enter MarketLens API Key (default: change-me-user)', accessKey || '');
+      if (next === null) return;
+      accessKey = next.trim();
+      if (accessKey) {
+        localStorage.setItem('marketlens_api_key', accessKey);
+      } else {
+        localStorage.removeItem('marketlens_api_key');
+      }
+    });
+
     async function loadSymbols() {
       try {
-        const res = await fetch('/api/v1/market/summary?active=true');
+        const res = await api('/api/v1/market/summary?active=true');
         if (!res.ok) return;
         const data = await res.json();
         symbolSelect.innerHTML = '<option value="">-- Select symbol --</option>' +
@@ -196,7 +220,7 @@
       });
       ctx.stroke();
       ctx.fillStyle = color;
-      ctx.font = '12px Space Grotesk';
+      ctx.font = '12px Manrope';
       ctx.fillText(label, 12, 16);
     }
 
@@ -238,7 +262,7 @@
       plotLine(macdVals, '#10b981');
       plotLine(signalVals, '#60a5fa');
       ctx.fillStyle = '#10b981';
-      ctx.font = '12px Space Grotesk';
+      ctx.font = '12px Manrope';
       ctx.fillText('MACD (green) / Signal (blue)', 12, 16);
     }
 
@@ -260,8 +284,8 @@
 
     async function loadQuote(sym) {
       try {
-        const res = await fetch(`/api/v1/market/summary?active=false`);
-        const resActive = await fetch(`/api/v1/market/summary?active=true`);
+        const res = await api(`/api/v1/market/summary?active=false`);
+        const resActive = await api(`/api/v1/market/summary?active=true`);
         const dataInactive = res.ok ? await res.json() : [];
         const dataActive = resActive.ok ? await resActive.json() : [];
         const combined = [...dataActive, ...dataInactive];
@@ -287,7 +311,7 @@
       loadBtn.disabled = true;
       try {
         await loadQuote(sym);
-        const res = await fetch(`/api/v1/indicators/${encodeURIComponent(sym)}`);
+        const res = await api(`/api/v1/indicators/${encodeURIComponent(sym)}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (!data.length) {

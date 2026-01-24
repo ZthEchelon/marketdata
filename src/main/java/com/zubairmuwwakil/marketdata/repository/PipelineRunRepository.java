@@ -11,4 +11,6 @@ public interface PipelineRunRepository extends JpaRepository<PipelineRun, Long> 
     Optional<PipelineRun> findTopByOrderByStartedAtDesc();
 
     Optional<PipelineRun> findByRunDate(LocalDate runDate);
+
+    Optional<PipelineRun> findByIdempotencyKey(String idempotencyKey);
 }

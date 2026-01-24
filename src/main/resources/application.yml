@@ -6,6 +6,29 @@ marketdata:
     base-url: https://www.alphavantage.co
     api-key: ${ALPHAVANTAGE_API_KEY:}
     outputsize: compact
+  security:
+    api-keys:
+      - key: ${MARKETDATA_ADMIN_KEY:change-me-admin}
+        role: ADMIN
+      - key: ${MARKETDATA_USER_KEY:change-me-user}
+        role: USER
+  rate-limit:
+    capacity: 60
+    refill-tokens: 60
+    refill-period: 60s
+  retention:
+    price-candle-days: 3650
+  calendar:
+    nyse-holidays:
+      - 2026-01-01
+      - 2026-01-19
+      - 2026-02-16
+      - 2026-04-03
+      - 2026-05-25
+      - 2026-07-03
+      - 2026-09-07
+      - 2026-11-26
+      - 2026-12-25
 
 spring:
   datasource:
@@ -26,14 +49,37 @@ spring:
     password: ${SPRING_FLYWAY_PASSWORD:${SPRING_DATASOURCE_PASSWORD:marketdata}}
     locations: classpath:db/migration
 
+  cache:
+    type: caffeine
+    cache-names: marketCalendar, adjustedPrices
+
 logging:
   file:
     name: logs/marketdata.log
   level:
     root: INFO
 
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui
+    operationsSorter: method
+
+
 management:
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+      roles: ADMIN

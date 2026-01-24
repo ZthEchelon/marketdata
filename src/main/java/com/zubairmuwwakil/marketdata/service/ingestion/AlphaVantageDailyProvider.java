@@ -38,7 +38,7 @@ public class AlphaVantageDailyProvider implements MarketDataProvider {
 
         List<DailyCandle> out = new ArrayList<>();
 
-        Iterator<Map.Entry<String, JsonNode>> it = series.fields();
+        Iterator<Map.Entry<String, JsonNode>> it = series.properties().iterator();
         while (it.hasNext()) {
             var entry = it.next();
             LocalDate date = LocalDate.parse(entry.getKey());

@@ -18,6 +18,7 @@ public class WatchlistSymbol {
     @Column(nullable = false, unique = true, length = 20)
     private String symbol;
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean active = true;
 

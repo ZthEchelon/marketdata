@@ -6,6 +6,7 @@ import com.zubairmuwwakil.marketdata.service.indicator.IndicatorQueryService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -21,10 +22,13 @@ public class IndicatorController {
     // GET /api/v1/indicators/AAPL
     @GetMapping("/{symbol}")
     public ResponseEntity<List<IndicatorDto>> getAllIndicators(
-            @PathVariable String symbol
+            @PathVariable String symbol,
+            @RequestParam(name = "after", required = false) LocalDate after,
+            @RequestParam(name = "limit", defaultValue = "200") int limit
     ) {
+        int bounded = Math.min(Math.max(limit, 1), 500);
         return ResponseEntity.ok(
-                service.getAllForSymbol(symbol.toUpperCase())
+            service.getAllForSymbol(symbol.toUpperCase(), after, bounded)
         );
     }
 
@@ -32,10 +36,13 @@ public class IndicatorController {
     @GetMapping("/{symbol}/{type}")
     public ResponseEntity<List<IndicatorDto>> getByType(
             @PathVariable String symbol,
-            @PathVariable IndicatorType type
+            @PathVariable IndicatorType type,
+            @RequestParam(name = "after", required = false) LocalDate after,
+            @RequestParam(name = "limit", defaultValue = "200") int limit
     ) {
+        int bounded = Math.min(Math.max(limit, 1), 500);
         return ResponseEntity.ok(
-                service.getByType(symbol.toUpperCase(), type)
+            service.getByType(symbol.toUpperCase(), type, after, bounded)
         );
     }
 }

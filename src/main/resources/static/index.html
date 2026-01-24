@@ -9,18 +9,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0b1020;
-      --surface: #101833;
-      --surface-soft: rgba(16, 24, 51, 0.7);
-      --text: #eef2ff;
-      --muted: #a1afc8;
-      --border: rgba(148, 163, 184, 0.18);
-      --brand: #6ee7ff;
-      --brand-strong: #38bdf8;
-      --accent: #22c55e;
+      --bg: #f4f6fb;
+      --surface: #ffffff;
+      --surface-alt: #f8fafc;
+      --text: #0b1220;
+      --muted: #5f6b85;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-strong: #1d4ed8;
+      --accent: #14b8a6;
       --warning: #f59e0b;
-      --danger: #f87171;
-      --shadow: 0 24px 80px rgba(3, 7, 18, 0.45);
+      --danger: #ef4444;
+      --shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
     }
     * { box-sizing: border-box; }
     body {
@@ -29,8 +29,8 @@
       color: var(--text);
       min-height: 100vh;
       background:
-        radial-gradient(1200px 500px at 10% -10%, rgba(56, 189, 248, 0.25), transparent 60%),
-        radial-gradient(900px 600px at 90% -20%, rgba(34, 197, 94, 0.18), transparent 60%),
+        radial-gradient(900px 420px at 5% -10%, rgba(37, 99, 235, 0.18), transparent 60%),
+        radial-gradient(900px 420px at 95% 0%, rgba(20, 184, 166, 0.16), transparent 60%),
         var(--bg);
     }
     a { color: inherit; }
@@ -39,7 +39,7 @@
       top: 0;
       z-index: 10;
       backdrop-filter: blur(14px);
-      background: rgba(11, 16, 32, 0.75);
+      background: rgba(244, 246, 251, 0.92);
       border-bottom: 1px solid var(--border);
     }
     .nav {
@@ -63,17 +63,17 @@
       width: 36px;
       height: 36px;
       border-radius: 12px;
-      background: linear-gradient(135deg, #38bdf8 0%, #22c55e 100%);
-      box-shadow: 0 12px 30px rgba(56, 189, 248, 0.35);
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      box-shadow: 0 12px 26px rgba(37, 99, 235, 0.22);
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      color: #04101f;
+      color: #ffffff;
       font-weight: 800;
     }
     .nav-links {
       display: flex;
-      gap: 14px;
+      gap: 12px;
       flex-wrap: wrap;
     }
     .nav-links a {
@@ -87,8 +87,14 @@
     }
     .nav-links a:hover {
       color: var(--text);
-      border-color: rgba(56, 189, 248, 0.35);
-      background: rgba(56, 189, 248, 0.12);
+      border-color: rgba(37, 99, 235, 0.25);
+      background: rgba(37, 99, 235, 0.08);
+    }
+    .nav-meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
     }
     .chip {
       display: inline-flex;
@@ -96,10 +102,10 @@
       gap: 8px;
       padding: 6px 12px;
       border-radius: 999px;
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      color: var(--brand);
-      background: rgba(56, 189, 248, 0.12);
-      font-size: 13px;
+      border: 1px solid var(--border);
+      color: var(--text);
+      background: var(--surface-alt);
+      font-size: 12px;
       font-weight: 600;
     }
     main {
@@ -107,25 +113,39 @@
       margin: 0 auto;
       padding: 32px 24px 80px;
       display: grid;
-      gap: 22px;
+      gap: 24px;
     }
     .hero {
       display: grid;
-      gap: 20px;
+      gap: 24px;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       align-items: center;
-      background: linear-gradient(145deg, rgba(16, 24, 51, 0.95), rgba(13, 23, 45, 0.6));
-      border-radius: 22px;
+    }
+    .hero-card,
+    .panel,
+    .kpi {
+      background: var(--surface);
       border: 1px solid var(--border);
-      padding: 28px;
+      border-radius: 18px;
+      padding: 20px;
       box-shadow: var(--shadow);
     }
+    .hero-card {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(20, 184, 166, 0.08));
+    }
+    .eyebrow {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-weight: 700;
+      color: var(--muted);
+    }
     .hero h1 {
-      margin: 0 0 12px;
-      font-size: clamp(28px, 3vw, 40px);
+      margin: 10px 0 12px;
+      font-size: clamp(26px, 2.8vw, 38px);
     }
     .hero p {
-      margin: 0 0 20px;
+      margin: 0 0 18px;
       color: var(--muted);
       line-height: 1.6;
     }
@@ -134,7 +154,14 @@
       gap: 12px;
       flex-wrap: wrap;
     }
-    .button {
+    .steps {
+      margin: 12px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .button,
+    button.button {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -144,57 +171,63 @@
       border: 1px solid transparent;
       font-weight: 700;
       cursor: pointer;
-      background: linear-gradient(135deg, var(--brand-strong), var(--accent));
-      color: #04101f;
+      background: linear-gradient(135deg, var(--primary-strong), var(--primary));
+      color: #ffffff;
       transition: transform 120ms ease, box-shadow 120ms ease;
       font-family: "Manrope", sans-serif;
       text-decoration: none;
     }
-    .button.secondary {
-      background: rgba(15, 23, 42, 0.7);
+    .button.secondary,
+    button.button.secondary {
+      background: #ffffff;
       color: var(--text);
-      border-color: rgba(148, 163, 184, 0.25);
+      border-color: var(--border);
     }
-    .button:hover { transform: translateY(-1px); box-shadow: 0 16px 40px rgba(34, 197, 94, 0.25); }
+    .button:hover { transform: translateY(-1px); box-shadow: 0 16px 32px rgba(37, 99, 235, 0.18); }
     button:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; transform: none; }
-    .grid {
+    .overview-grid {
       display: grid;
       gap: 16px;
-      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     }
-    .card {
-      background: var(--surface-soft);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 20px;
-      box-shadow: var(--shadow);
+    .kpi-label {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
     }
-    .card h2 {
-      margin: 0 0 10px;
+    .kpi-value {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 0 6px;
+    }
+    .kpi-sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .workspace-grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .panel-header h2 {
+      margin: 0;
       font-size: 18px;
     }
-    .card p {
-      margin: 0 0 16px;
+    .panel-sub {
+      margin: 0 0 14px;
       color: var(--muted);
       font-size: 14px;
       line-height: 1.6;
-    }
-    .pipeline-step {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-    }
-    .step-index {
-      width: 34px;
-      height: 34px;
-      border-radius: 12px;
-      background: rgba(56, 189, 248, 0.16);
-      border: 1px solid rgba(56, 189, 248, 0.35);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      color: var(--brand);
     }
     label {
       display: block;
@@ -207,16 +240,16 @@
       width: 100%;
       padding: 12px 12px;
       border-radius: 12px;
-      border: 1px solid rgba(148, 163, 184, 0.25);
-      background: rgba(5, 10, 24, 0.7);
+      border: 1px solid var(--border);
+      background: #ffffff;
       color: var(--text);
       font-size: 14px;
       outline: none;
       font-family: "Manrope", sans-serif;
     }
     input:focus, select:focus {
-      border-color: var(--brand);
-      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
     }
     .inline-actions {
       display: flex;
@@ -236,9 +269,9 @@
       gap: 6px;
       padding: 5px 10px;
       border-radius: 999px;
-      background: rgba(34, 197, 94, 0.12);
-      color: var(--accent);
-      border: 1px solid rgba(34, 197, 94, 0.3);
+      background: rgba(37, 99, 235, 0.1);
+      color: var(--primary-strong);
+      border: 1px solid rgba(37, 99, 235, 0.2);
       font-size: 12px;
       font-family: "IBM Plex Mono", monospace;
     }
@@ -248,9 +281,9 @@
       gap: 8px;
       padding: 6px 12px;
       border-radius: 999px;
-      background: rgba(15, 23, 42, 0.7);
-      border: 1px solid rgba(148, 163, 184, 0.25);
-      color: var(--muted);
+      background: rgba(20, 184, 166, 0.12);
+      border: 1px solid rgba(20, 184, 166, 0.25);
+      color: #0f766e;
       font-size: 12px;
       font-family: "IBM Plex Mono", monospace;
     }
@@ -262,7 +295,7 @@
     }
     th, td {
       padding: 10px 12px;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+      border-bottom: 1px solid var(--border);
       text-align: left;
       color: var(--text);
       font-family: "IBM Plex Mono", monospace;
@@ -271,7 +304,6 @@
     @media (max-width: 700px) {
       .nav { padding: 16px; }
       main { padding: 20px 16px 60px; }
-      .hero { padding: 20px; }
     }
   </style>
 </head>
@@ -283,110 +315,122 @@
         MarketLens
       </div>
       <div class="nav-links">
-        <a href="/">Pipeline</a>
+        <a href="/">Workspace</a>
         <a href="/watchlist.html">Watchlist</a>
         <a href="/indicators.html">Indicators</a>
       </div>
-      <div class="inline-actions">
+      <div class="nav-meta">
         <span class="chip">Status: <span id="status-dot">Not connected</span></span>
         <span class="chip">Quota: <span id="quota-label">--/--</span></span>
+        <button id="access-key-btn" class="button secondary" style="padding:6px 12px;">Set API Key</button>
       </div>
     </div>
   </header>
 
   <main>
     <section class="hero">
-      <div>
-        <div class="chip" style="margin-bottom:12px;">Market data pipeline</div>
-        <h1>MarketLens: clean, intuitive market data workflows.</h1>
-        <p>Designed for general users, MarketLens turns raw market data into a clear flow: connect your data source, curate a watchlist, ingest daily candles, and explore indicators in seconds.</p>
+      <div class="hero-card">
+        <span class="eyebrow">Market data workspace</span>
+        <h1>MarketLens, redesigned for everyday market exploration.</h1>
+        <p>Focus on what matters: a guided pipeline, fast watchlist edits, and indicator insights that surface trends without the clutter.</p>
         <div class="hero-actions">
-          <a class="button" href="#ingestion">Run ingestion</a>
-          <a class="button secondary" href="/watchlist.html">View watchlist</a>
+          <a class="button" href="#ingestion">Start ingestion</a>
+          <a class="button secondary" href="/watchlist.html">Open watchlist</a>
         </div>
       </div>
-      <div class="grid">
-        <div class="card">
-          <div class="pipeline-step">
-            <div class="step-index">1</div>
-            <div>
-              <h2>Connect</h2>
-              <p>Add your Alpha Vantage key to unlock data pulls with rate awareness.</p>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="pipeline-step">
-            <div class="step-index">2</div>
-            <div>
-              <h2>Curate</h2>
-              <p>Build a watchlist of the symbols you care about most.</p>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="pipeline-step">
-            <div class="step-index">3</div>
-            <div>
-              <h2>Ingest</h2>
-              <p>Backfill candles, compute RSI and MACD, and store normalized data.</p>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="pipeline-step">
-            <div class="step-index">4</div>
-            <div>
-              <h2>Explore</h2>
-              <p>Query indicators and visualize momentum instantly.</p>
-            </div>
-          </div>
-        </div>
+      <div class="hero-card">
+        <h2 style="margin:0 0 8px;">Pipeline checklist</h2>
+        <p class="panel-sub" style="margin-bottom:0;">A simple, user-friendly flow inspired by modern market dashboards.</p>
+        <ol class="steps">
+          <li>Connect your Alpha Vantage key.</li>
+          <li>Add symbols to your watchlist.</li>
+          <li>Run ingestion to backfill candles.</li>
+          <li>Explore RSI & MACD signals.</li>
+        </ol>
       </div>
     </section>
 
-    <section class="card" id="ingestion">
-      <h2>Connect & ingest data</h2>
-      <p>MarketLens follows a lightweight pipeline: connect your API key, ingest a small batch, and expand. This keeps quotas healthy and ensures reliable data quality.</p>
-      <div class="grid">
-        <div>
-          <label for="api-key">Alpha Vantage API Key</label>
-          <input id="api-key" placeholder="Paste API key" autocomplete="off">
-        </div>
-        <div class="inline-actions" style="align-items:flex-end;">
-          <button id="save-key-btn" class="button">Save API Key</button>
+    <section class="overview-grid">
+      <div class="kpi">
+        <p class="kpi-label">Watchlist symbols</p>
+        <div class="kpi-value" id="watchlist-count">0</div>
+        <p class="kpi-sub">Active symbols tracked today</p>
+      </div>
+      <div class="kpi">
+        <p class="kpi-label">Data status</p>
+        <div class="kpi-value" id="status-kpi">Checking…</div>
+        <p class="kpi-sub">API connectivity</p>
+      </div>
+      <div class="kpi">
+        <p class="kpi-label">Quota remaining</p>
+        <div class="kpi-value" id="quota-kpi">--/--</div>
+        <p class="kpi-sub">Alpha Vantage quota</p>
+      </div>
+    </section>
+
+    <section class="workspace-grid">
+      <div class="panel" id="ingestion">
+        <div class="panel-header">
+          <h2>Connect & ingest</h2>
           <span class="data-pill">Rate-aware</span>
         </div>
+        <p class="panel-sub">Connect your data source once, then run ingestion whenever you need a fresh backfill.</p>
+        <div class="card" style="margin:12px 0; padding:12px 14px; background:var(--surface-alt);">
+          <strong>Enter a MarketLens API Key</strong>
+          <div class="status" style="margin-top:6px;">Default key: <span style="font-family: 'IBM Plex Mono', monospace;">change-me-user</span>.</div>
+        </div>
+        <div class="grid">
+          <div>
+            <label for="marketlens-key">MarketLens API Key</label>
+            <input id="marketlens-key" placeholder="Paste MarketLens key" autocomplete="off">
+          </div>
+          <div class="inline-actions" style="align-items:flex-end;">
+            <button id="save-marketlens-btn" class="button secondary">Save MarketLens Key</button>
+            <button id="use-default-marketlens-btn" class="button secondary" type="button">Use default key</button>
+          </div>
+          <div>
+            <label for="api-key">Alpha Vantage API Key</label>
+            <input id="api-key" placeholder="Paste API key" autocomplete="off">
+          </div>
+          <div class="inline-actions" style="align-items:flex-end;">
+            <button id="save-key-btn" class="button">Save API Key</button>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; margin:12px 0; flex-wrap:wrap;">
+          <img src="https://www.alphavantage.co/images/alpha_vantage_logo.png" alt="Alpha Vantage" style="height:22px;">
+          <a href="https://www.alphavantage.co/support/#api-key" target="_blank" rel="noreferrer" style="color:var(--primary); text-decoration:none; font-weight:700;">Get a free Alpha Vantage key →</a>
+        </div>
+        <div class="status" id="key-status"></div>
+        <button id="ingest-btn" class="button">Run ingestion</button>
+        <div class="status" id="ingest-status"></div>
       </div>
-      <div style="display:flex; align-items:center; gap:10px; margin:12px 0; flex-wrap:wrap;">
-        <img src="https://www.alphavantage.co/images/alpha_vantage_logo.png" alt="Alpha Vantage" style="height:26px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));">
-        <a href="https://www.alphavantage.co/support/#api-key" target="_blank" rel="noreferrer" style="color:var(--brand); text-decoration:none; font-weight:700;">Get a free Alpha Vantage key →</a>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h2>Watchlist manager</h2>
+          <a class="button secondary" href="/watchlist.html">Snapshot</a>
+        </div>
+        <p class="panel-sub">Add or remove symbols quickly. The watchlist drives ingestion and indicator refreshes.</p>
+        <div class="grid">
+          <div>
+            <label for="watchlist-input">Add symbol</label>
+            <input id="watchlist-input" placeholder="e.g. AAPL" autocomplete="off">
+          </div>
+          <div class="inline-actions" style="align-items:flex-end;">
+            <button id="watchlist-add-btn" class="button">Add to Watchlist</button>
+          </div>
+        </div>
+        <div id="watchlist-list" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;"></div>
+        <div class="status" id="watchlist-status"></div>
       </div>
-      <div class="status" id="key-status"></div>
-      <button id="ingest-btn" class="button">Run ingestion</button>
-      <div class="status" id="ingest-status"></div>
     </section>
 
-    <section class="card">
-      <h2>Watchlist hub</h2>
-      <p>Keep a focused list of symbols. MarketLens uses this list for daily ingestion and indicator updates.</p>
-      <div class="grid">
-        <div>
-          <label for="watchlist-input">Add symbol</label>
-          <input id="watchlist-input" placeholder="e.g. AAPL" autocomplete="off">
-        </div>
-        <div class="inline-actions" style="align-items:flex-end;">
-          <button id="watchlist-add-btn" class="button">Add to Watchlist</button>
-          <a class="button secondary" href="/watchlist.html">Open snapshot</a>
-        </div>
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Indicator explorer</h2>
+        <a class="button secondary" href="/indicators.html">Visualizer</a>
       </div>
-      <div id="watchlist-list" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;"></div>
-      <div class="status" id="watchlist-status"></div>
-    </section>
-
-    <section class="card">
-      <h2>Indicator lookup</h2>
-      <p>Query stored RSI and MACD values by symbol, or pick from the latest watchlist summary.</p>
+      <p class="panel-sub">Search RSI and MACD values by symbol. Use the latest summary to reduce manual typing.</p>
       <div class="grid">
         <div>
           <label for="symbol">Symbol</label>
@@ -411,7 +455,6 @@
         </div>
         <div class="inline-actions" style="align-items:flex-end;">
           <button id="query-btn" class="button">Fetch indicators</button>
-          <a class="button secondary" href="/indicators.html">Visualizer</a>
         </div>
       </div>
       <div class="status" id="query-status"></div>
@@ -436,11 +479,57 @@
     const results = document.getElementById('results');
     const symbolSelect = document.getElementById('symbol-select');
     const symbolInfo = document.getElementById('symbol-info');
+    const watchlistCount = document.getElementById('watchlist-count');
+    const quotaKpi = document.getElementById('quota-kpi');
+    const statusKpi = document.getElementById('status-kpi');
+    const accessKeyBtn = document.getElementById('access-key-btn');
+    const marketlensKeyInput = document.getElementById('marketlens-key');
+    const saveMarketlensBtn = document.getElementById('save-marketlens-btn');
+    const useDefaultMarketlensBtn = document.getElementById('use-default-marketlens-btn');
 
-    const api = (path, opts = {}) => fetch(path, {
-      headers: { 'Content-Type': 'application/json' },
-      ...opts
-    });
+    let accessKey = localStorage.getItem('marketlens_api_key') || '';
+    if (marketlensKeyInput) {
+      marketlensKeyInput.value = accessKey;
+    }
+
+    const promptForKey = () => {
+      const next = prompt('Enter MarketLens API Key (default: change-me-user)', accessKey || '');
+      if (next === null) return false;
+      accessKey = next.trim();
+      if (accessKey) {
+        localStorage.setItem('marketlens_api_key', accessKey);
+      } else {
+        localStorage.removeItem('marketlens_api_key');
+      }
+      return true;
+    };
+
+    const ensureAccessKey = (statusEl) => {
+      if (accessKey) return true;
+      if (!promptForKey()) return false;
+      if (!accessKey) {
+        if (statusEl) {
+          setStatus(statusEl, 'Set MarketLens API Key first (default: change-me-user).', true);
+        }
+        return false;
+      }
+      return true;
+    };
+
+    const api = async (path, opts = {}, retry = true) => {
+      const res = await fetch(path, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessKey ? { 'X-API-Key': accessKey } : {})
+        },
+        ...opts
+      });
+      if (res.status === 401 && retry) {
+        const ok = promptForKey();
+        if (ok) return api(path, opts, false);
+      }
+      return res;
+    };
 
     const setStatus = (el, msg, isError = false) => {
       el.textContent = msg || '';
@@ -449,29 +538,65 @@
 
     async function refreshQuota() {
       try {
-        const res = await fetch('/api/v1/admin/quota');
+        const res = await api('/api/v1/admin/quota');
         if (res.ok) {
           const data = await res.json();
           quotaLabel.textContent = `${data.remaining}/${data.limit}`;
           quotaLabel.style.color = data.remaining > 0 ? 'var(--accent)' : 'var(--danger)';
+          if (quotaKpi) {
+            quotaKpi.textContent = `${data.remaining}/${data.limit}`;
+          }
         } else {
           quotaLabel.textContent = '--/--';
           quotaLabel.style.color = 'var(--muted)';
+          if (quotaKpi) quotaKpi.textContent = '--/--';
         }
       } catch {
         quotaLabel.textContent = '--/--';
         quotaLabel.style.color = 'var(--muted)';
+        if (quotaKpi) quotaKpi.textContent = '--/--';
       }
     }
 
     let watchlist = [];
     let summaries = [];
 
+    accessKeyBtn.addEventListener('click', () => {
+      promptForKey();
+    });
+
+    saveMarketlensBtn.addEventListener('click', () => {
+      accessKey = (marketlensKeyInput.value || '').trim();
+      if (accessKey) {
+        localStorage.setItem('marketlens_api_key', accessKey);
+        setStatus(keyStatus, 'MarketLens API key saved. Validating...');
+        api('/api/v1/health').then(res => {
+          if (res.ok) {
+            setStatus(keyStatus, 'MarketLens API key validated.');
+          } else {
+            setStatus(keyStatus, 'MarketLens API key is invalid. Use change-me-user or update server config.', true);
+          }
+        });
+      } else {
+        localStorage.removeItem('marketlens_api_key');
+        setStatus(keyStatus, 'MarketLens API key cleared.');
+      }
+    });
+
+    useDefaultMarketlensBtn.addEventListener('click', () => {
+      accessKey = 'change-me-user';
+      marketlensKeyInput.value = accessKey;
+      localStorage.setItem('marketlens_api_key', accessKey);
+      setStatus(keyStatus, 'Default MarketLens API key applied.');
+    });
+
     const renderWatchlist = () => {
       if (!watchlist.length) {
         watchlistList.innerHTML = '<span class="status">No symbols yet.</span>';
+        if (watchlistCount) watchlistCount.textContent = '0';
         return;
       }
+      if (watchlistCount) watchlistCount.textContent = String(watchlist.length);
       watchlistList.innerHTML = watchlist.map(sym => `
         <span class="badge" data-symbol="${sym}" style="gap:6px;">
           ${sym}
@@ -503,6 +628,7 @@
     };
 
     const loadWatchlist = async () => {
+      if (!ensureAccessKey(watchlistStatus)) return;
       setStatus(watchlistStatus, 'Loading watchlist...');
       try {
         const res = await api('/api/v1/watchlist');
@@ -572,6 +698,7 @@
         setStatus(keyStatus, 'Enter an API key.', true);
         return;
       }
+      if (!ensureAccessKey(keyStatus)) return;
       setStatus(keyStatus, 'Saving API key...');
       keyBtn.disabled = true;
       try {
@@ -599,10 +726,11 @@
     });
 
     ingestBtn.addEventListener('click', async () => {
+      if (!ensureAccessKey(ingestStatus)) return;
       setStatus(ingestStatus, 'Running ingestion...');
       ingestBtn.disabled = true;
       try {
-        const res = await api('/api/v1/admin/ingest', { method: 'POST' });
+        const res = await api('/api/v1/ingestion/run', { method: 'POST' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         setStatus(ingestStatus, `Run ${data.id} => ${data.status}. Processed ${data.symbolsProcessed}/${data.symbolsExpected}.`, data.status !== 'SUCCESS');
@@ -650,13 +778,16 @@
           <td>${d.tradeDate}</td>
           <td>${d.type}</td>
           <td>${Number(d.value).toFixed(4)}</td>
+            if (statusKpi) statusKpi.textContent = 'Connected';
         </tr>
       `).join('');
       results.innerHTML = `
+            if (statusKpi) statusKpi.textContent = 'Degraded';
         <table>
           <thead>
             <tr>
               <th>Symbol</th>
+          if (statusKpi) statusKpi.textContent = 'Offline';
               <th>Trade Date</th>
               <th>Type</th>
               <th>Value</th>
