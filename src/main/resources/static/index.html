@@ -3,119 +3,256 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Marketdata Console</title>
+  <title>MarketLens — Market Data Pipeline</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0f172a;
-      --panel: #111827;
-      --accent: #10b981;
-      --accent-soft: rgba(16, 185, 129, 0.12);
-      --text: #e5e7eb;
-      --muted: #94a3b8;
+      --bg: #0b1020;
+      --surface: #101833;
+      --surface-soft: rgba(16, 24, 51, 0.7);
+      --text: #eef2ff;
+      --muted: #a1afc8;
+      --border: rgba(148, 163, 184, 0.18);
+      --brand: #6ee7ff;
+      --brand-strong: #38bdf8;
+      --accent: #22c55e;
+      --warning: #f59e0b;
       --danger: #f87171;
-      --border: #1f2937;
+      --shadow: 0 24px 80px rgba(3, 7, 18, 0.45);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
-      background: radial-gradient(120% 120% at 0% 20%, #0b1326, #0f172a 45%, #0b1326 90%);
+      font-family: "Manrope", system-ui, -apple-system, sans-serif;
       color: var(--text);
       min-height: 100vh;
+      background:
+        radial-gradient(1200px 500px at 10% -10%, rgba(56, 189, 248, 0.25), transparent 60%),
+        radial-gradient(900px 600px at 90% -20%, rgba(34, 197, 94, 0.18), transparent 60%),
+        var(--bg);
     }
+    a { color: inherit; }
     header {
-      padding: 32px 24px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(14px);
+      background: rgba(11, 16, 32, 0.75);
       border-bottom: 1px solid var(--border);
+    }
+    .nav {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 18px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 16px;
       flex-wrap: wrap;
-      gap: 12px;
     }
     .brand {
-      font-size: 20px;
-      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
       letter-spacing: 0.02em;
     }
-    .pill {
+    .logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #38bdf8 0%, #22c55e 100%);
+      box-shadow: 0 12px 30px rgba(56, 189, 248, 0.35);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #04101f;
+      font-weight: 800;
+    }
+    .nav-links {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .nav-links a {
+      text-decoration: none;
+      color: var(--muted);
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      transition: all 150ms ease;
+    }
+    .nav-links a:hover {
+      color: var(--text);
+      border-color: rgba(56, 189, 248, 0.35);
+      background: rgba(56, 189, 248, 0.12);
+    }
+    .chip {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 12px;
-      background: var(--accent-soft);
-      color: var(--accent);
+      padding: 6px 12px;
       border-radius: 999px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--brand);
+      background: rgba(56, 189, 248, 0.12);
       font-size: 13px;
-      border: 1px solid rgba(16, 185, 129, 0.2);
+      font-weight: 600;
     }
     main {
-      max-width: 1100px;
+      max-width: 1180px;
       margin: 0 auto;
-      padding: 24px;
+      padding: 32px 24px 80px;
       display: grid;
-      grid-template-columns: 1fr;
+      gap: 22px;
+    }
+    .hero {
+      display: grid;
       gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      align-items: center;
+      background: linear-gradient(145deg, rgba(16, 24, 51, 0.95), rgba(13, 23, 45, 0.6));
+      border-radius: 22px;
+      border: 1px solid var(--border);
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+    .hero h1 {
+      margin: 0 0 12px;
+      font-size: clamp(28px, 3vw, 40px);
+    }
+    .hero p {
+      margin: 0 0 20px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      font-weight: 700;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--brand-strong), var(--accent));
+      color: #04101f;
+      transition: transform 120ms ease, box-shadow 120ms ease;
+      font-family: "Manrope", sans-serif;
+      text-decoration: none;
+    }
+    .button.secondary {
+      background: rgba(15, 23, 42, 0.7);
+      color: var(--text);
+      border-color: rgba(148, 163, 184, 0.25);
+    }
+    .button:hover { transform: translateY(-1px); box-shadow: 0 16px 40px rgba(34, 197, 94, 0.25); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; transform: none; }
+    .grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
     }
     .card {
-      background: var(--panel);
+      background: var(--surface-soft);
       border: 1px solid var(--border);
-      border-radius: 16px;
+      border-radius: 18px;
       padding: 20px;
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+      box-shadow: var(--shadow);
     }
     .card h2 {
-      margin: 0 0 12px;
+      margin: 0 0 10px;
       font-size: 18px;
-      letter-spacing: 0.01em;
     }
     .card p {
       margin: 0 0 16px;
       color: var(--muted);
-      line-height: 1.5;
       font-size: 14px;
+      line-height: 1.6;
+    }
+    .pipeline-step {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .step-index {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: rgba(56, 189, 248, 0.16);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--brand);
     }
     label {
       display: block;
       margin-bottom: 6px;
       color: var(--muted);
       font-size: 13px;
+      font-weight: 600;
     }
     input, select {
       width: 100%;
-      padding: 11px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: #0b1221;
+      padding: 12px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      background: rgba(5, 10, 24, 0.7);
       color: var(--text);
       font-size: 14px;
-      font-family: "Space Grotesk", sans-serif;
       outline: none;
+      font-family: "Manrope", sans-serif;
     }
     input:focus, select:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25);
     }
-    button {
-      border: none;
-      border-radius: 10px;
-      padding: 11px 14px;
-      background: var(--accent);
-      color: #052e16;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 120ms ease, box-shadow 120ms ease;
-      font-family: "Space Grotesk", sans-serif;
-    }
-    button:hover { transform: translateY(-1px); box-shadow: 0 10px 30px rgba(16, 185, 129, 0.25); }
-    button:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; transform: none; }
-    .row {
-      display: grid;
+    .inline-actions {
+      display: flex;
       gap: 12px;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      align-items: end;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .status {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+    .status.error { color: var(--danger); }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(34, 197, 94, 0.12);
+      color: var(--accent);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      font-size: 12px;
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .data-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      color: var(--muted);
+      font-size: 12px;
+      font-family: "IBM Plex Mono", monospace;
     }
     table {
       width: 100%;
@@ -125,116 +262,145 @@
     }
     th, td {
       padding: 10px 12px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.15);
       text-align: left;
       color: var(--text);
       font-family: "IBM Plex Mono", monospace;
     }
     th { color: var(--muted); font-weight: 600; }
-    .status { font-size: 13px; color: var(--muted); margin-top: 10px; }
-    .status.error { color: var(--danger); }
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 8px;
-      border-radius: 999px;
-      background: rgba(16, 185, 129, 0.12);
-      color: var(--accent);
-      border: 1px solid rgba(16, 185, 129, 0.25);
-      font-size: 12px;
-      font-family: "IBM Plex Mono", monospace;
-    }
-    @media (max-width: 640px) {
-      header { padding: 24px 16px 12px; }
-      main { padding: 16px; }
-      .card { padding: 16px; }
+    @media (max-width: 700px) {
+      .nav { padding: 16px; }
+      main { padding: 20px 16px 60px; }
+      .hero { padding: 20px; }
     }
   </style>
 </head>
 <body>
   <header>
-    <div class="brand">Marketdata Control</div>
-    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-      <a href="/watchlist.html" style="text-decoration:none;">
-        <span class="pill">Watchlist Snapshot</span>
-      </a>
-      <a href="/indicators.html" style="text-decoration:none;">
-        <span class="pill">Indicator Visualizer</span>
-      </a>
-      <div class="pill">Status: <span id="status-dot">Not connected</span></div>
-      <div class="pill">Quota: <span id="quota-label">--/--</span></div>
+    <div class="nav">
+      <div class="brand">
+        <div class="logo">ML</div>
+        MarketLens
+      </div>
+      <div class="nav-links">
+        <a href="/">Pipeline</a>
+        <a href="/watchlist.html">Watchlist</a>
+        <a href="/indicators.html">Indicators</a>
+      </div>
+      <div class="inline-actions">
+        <span class="chip">Status: <span id="status-dot">Not connected</span></span>
+        <span class="chip">Quota: <span id="quota-label">--/--</span></span>
+      </div>
     </div>
   </header>
 
   <main>
-    <section class="card" id="ingest-card">
-      <h2>Ingest Daily Data</h2>
-      <p>Trigger the pipeline to fetch candles for active watchlist symbols and compute RSI/MACD.</p>
-      <div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:12px; background:#0b1221;">
-        <strong>How to use:</strong>
-        <ul style="margin:8px 0 0 16px; color:var(--muted); padding-left:16px;">
-          <li>Step 0 — Get an API key (Alpha Vantage link below).</li>
-          <li>Step 1 — Enter one stock in the watchlist.</li>
-          <li>Step 2 — Run ingestion.</li>
-          <li>Step 3 — Clear that stock from the watchlist.</li>
-          <li>Repeat Steps 1–3 for each stock you want to backfill.</li>
-          <li>When all stocks are ready, add them all to the watchlist, refresh, and view.</li>
-        </ul>
+    <section class="hero">
+      <div>
+        <div class="chip" style="margin-bottom:12px;">Market data pipeline</div>
+        <h1>MarketLens: clean, intuitive market data workflows.</h1>
+        <p>Designed for general users, MarketLens turns raw market data into a clear flow: connect your data source, curate a watchlist, ingest daily candles, and explore indicators in seconds.</p>
+        <div class="hero-actions">
+          <a class="button" href="#ingestion">Run ingestion</a>
+          <a class="button secondary" href="/watchlist.html">View watchlist</a>
+        </div>
       </div>
-      <div class="row" style="margin-bottom:12px;">
+      <div class="grid">
+        <div class="card">
+          <div class="pipeline-step">
+            <div class="step-index">1</div>
+            <div>
+              <h2>Connect</h2>
+              <p>Add your Alpha Vantage key to unlock data pulls with rate awareness.</p>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="pipeline-step">
+            <div class="step-index">2</div>
+            <div>
+              <h2>Curate</h2>
+              <p>Build a watchlist of the symbols you care about most.</p>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="pipeline-step">
+            <div class="step-index">3</div>
+            <div>
+              <h2>Ingest</h2>
+              <p>Backfill candles, compute RSI and MACD, and store normalized data.</p>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="pipeline-step">
+            <div class="step-index">4</div>
+            <div>
+              <h2>Explore</h2>
+              <p>Query indicators and visualize momentum instantly.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="ingestion">
+      <h2>Connect & ingest data</h2>
+      <p>MarketLens follows a lightweight pipeline: connect your API key, ingest a small batch, and expand. This keeps quotas healthy and ensures reliable data quality.</p>
+      <div class="grid">
         <div>
           <label for="api-key">Alpha Vantage API Key</label>
-          <input id="api-key" placeholder="Enter API key" autocomplete="off">
+          <input id="api-key" placeholder="Paste API key" autocomplete="off">
         </div>
-        <div>
-          <button id="save-key-btn">Save API Key</button>
+        <div class="inline-actions" style="align-items:flex-end;">
+          <button id="save-key-btn" class="button">Save API Key</button>
+          <span class="data-pill">Rate-aware</span>
         </div>
       </div>
-      <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-        <img src="https://www.alphavantage.co/images/alpha_vantage_logo.png" alt="Alpha Vantage" style="height:28px;">
-        <a href="https://www.alphavantage.co/support/#api-key" target="_blank" rel="noreferrer" style="color:var(--accent); text-decoration:none; font-weight:600;">
-          Need an API key? Get one from Alpha Vantage →
-        </a>
+      <div style="display:flex; align-items:center; gap:10px; margin:12px 0; flex-wrap:wrap;">
+        <img src="https://www.alphavantage.co/images/alpha_vantage_logo.png" alt="Alpha Vantage" style="height:26px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));">
+        <a href="https://www.alphavantage.co/support/#api-key" target="_blank" rel="noreferrer" style="color:var(--brand); text-decoration:none; font-weight:700;">Get a free Alpha Vantage key →</a>
       </div>
       <div class="status" id="key-status"></div>
-      <button id="ingest-btn">Run Ingestion</button>
+      <button id="ingest-btn" class="button">Run ingestion</button>
       <div class="status" id="ingest-status"></div>
     </section>
 
     <section class="card">
-      <h2>Watchlist</h2>
-      <p>Manage the active symbols that the pipeline ingests. Add symbols, view current list, and remove entries.</p>
-      <div class="row" style="margin-bottom:12px;">
+      <h2>Watchlist hub</h2>
+      <p>Keep a focused list of symbols. MarketLens uses this list for daily ingestion and indicator updates.</p>
+      <div class="grid">
         <div>
-          <label for="watchlist-input">Add Symbol</label>
+          <label for="watchlist-input">Add symbol</label>
           <input id="watchlist-input" placeholder="e.g. AAPL" autocomplete="off">
         </div>
-        <div>
-          <button id="watchlist-add-btn">Add to Watchlist</button>
+        <div class="inline-actions" style="align-items:flex-end;">
+          <button id="watchlist-add-btn" class="button">Add to Watchlist</button>
+          <a class="button secondary" href="/watchlist.html">Open snapshot</a>
         </div>
       </div>
-      <div id="watchlist-list" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+      <div id="watchlist-list" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;"></div>
       <div class="status" id="watchlist-status"></div>
     </section>
 
     <section class="card">
-      <h2>Indicator Lookup</h2>
-      <p>Query stored indicators by symbol (and optional type) from the normalized table.</p>
-      <div class="row">
+      <h2>Indicator lookup</h2>
+      <p>Query stored RSI and MACD values by symbol, or pick from the latest watchlist summary.</p>
+      <div class="grid">
         <div>
           <label for="symbol">Symbol</label>
           <input id="symbol" placeholder="e.g. AAPL" autocomplete="off">
         </div>
         <div>
-          <label for="symbol-select">Or pick from watchlist</label>
+          <label for="symbol-select">From latest summary</label>
           <select id="symbol-select">
             <option value="">-- Select symbol --</option>
           </select>
           <div id="symbol-info" class="status"></div>
         </div>
         <div>
-          <label for="type">Indicator Type (optional)</label>
+          <label for="type">Indicator type</label>
           <select id="type">
             <option value="">All indicators</option>
             <option value="RSI_14">RSI_14</option>
@@ -243,8 +409,9 @@
             <option value="MACD_HISTOGRAM">MACD_HISTOGRAM</option>
           </select>
         </div>
-        <div>
-          <button id="query-btn">Fetch Indicators</button>
+        <div class="inline-actions" style="align-items:flex-end;">
+          <button id="query-btn" class="button">Fetch indicators</button>
+          <a class="button secondary" href="/indicators.html">Visualizer</a>
         </div>
       </div>
       <div class="status" id="query-status"></div>
