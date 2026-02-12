@@ -24,6 +24,7 @@ public class RenderDatabaseConfig {
     @Bean
     @ConditionalOnMissingBean(DataSource.class)
     @ConditionalOnProperty(name = "DATABASE_URL")
+    @ConditionalOnProperty(name = "spring.datasource.url", havingValue = "", matchIfMissing = true)
     public DataSource dataSource(Environment env) {
         String databaseUrl = env.getProperty("DATABASE_URL");
         if (databaseUrl == null || databaseUrl.isBlank()) {
