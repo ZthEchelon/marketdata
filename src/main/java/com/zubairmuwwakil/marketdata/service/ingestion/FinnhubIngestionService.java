@@ -90,6 +90,10 @@ public class FinnhubIngestionService {
             }
         }
 
+        if (processed == 0 && expected > 0) {
+            status = PipelineStatus.FAILED;
+        }
+
         PipelineRun run = PipelineRun.builder()
                 .runDate(runDate)
                 .status(status)

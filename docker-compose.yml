@@ -10,7 +10,7 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - marketdata_pgdata16:/var/lib/postgresql
+      - marketdata_pgdata16:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U marketdata -d marketdata"]
       interval: 5s

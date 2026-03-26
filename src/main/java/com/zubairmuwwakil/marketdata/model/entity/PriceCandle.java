@@ -44,6 +44,7 @@ public class PriceCandle {
     @Column(nullable = false)
     private Long volume;
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean adjusted = false;
 

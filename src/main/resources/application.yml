@@ -7,23 +7,22 @@ marketdata:
     api-key: ${FINNHUB_API_KEY:}
   symbols: AAPL,MSFT,AMZN,GOOGL,NVDA,TSLA,META,BRK.B,JPM,V,MA,UNH,HD,COST,AVGO,LLY,XOM,KO,PEP,JNJ
 
-
 spring:
+  application:
+    name: marketdata
   datasource:
     url: jdbc:postgresql://localhost:5433/marketdata
     username: marketdata
     password: marketdata
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
       ddl-auto: validate
     open-in-view: false
-
   flyway:
     enabled: true
     locations: classpath:db/migration
-    
+
 management:
   endpoints:
     web:
