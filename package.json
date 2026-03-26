@@ -1,0 +1,12 @@
+{
+  "name": "marketdata-vercel-adapter",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Vercel serverless adapter for the marketdata project",
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "pg": "^8.16.3"
+  }
+}

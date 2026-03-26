@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>marketdata API</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #0b1020;
+        --panel: #121a33;
+        --text: #e8ecff;
+        --muted: #9ea9cf;
+        --accent: #5eead4;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "SF Mono", "Menlo", "Consolas", monospace;
+        background: radial-gradient(circle at 20% 20%, #1a2752 0%, var(--bg) 45%);
+        color: var(--text);
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      main {
+        width: min(720px, 100%);
+        border: 1px solid #263464;
+        border-radius: 14px;
+        background: linear-gradient(180deg, #141e3d 0%, var(--panel) 100%);
+        padding: 24px;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: 1.45rem;
+      }
+
+      p {
+        margin: 0 0 12px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      code,
+      a {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>marketdata API is running on Vercel</h1>
+      <p>
+        Health endpoint:
+        <a href="/api/health"><code>/api/health</code></a>
+      </p>
+      <p>
+        Ingestion endpoint (POST):
+        <code>/api/v1/admin/ingest</code>
+      </p>
+      <p>
+        Required environment variables: <code>DATABASE_URL</code> and
+        <code>FINNHUB_API_KEY</code>
+      </p>
+      <p>
+        Note: This Vercel deployment uses a Node.js serverless adapter. The Spring Boot app remains in this repository for non-Vercel runtimes.
+      </p>
+    </main>
+  </body>
+</html>

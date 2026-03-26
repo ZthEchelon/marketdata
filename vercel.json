@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/v1/admin/ingest.js": {
+      "maxDuration": 60
+    }
+  }
+}
